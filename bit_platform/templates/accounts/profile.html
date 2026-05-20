@@ -1,0 +1,138 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Мой профиль — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+{% if user.profile.is_client %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:client_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:my_requests' %}">
+        <i class="fas fa-clipboard-list me-2"></i>Мои заявки
+    </a>
+</li>
+{% elif user.profile.is_analyst %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+{% elif user.profile.is_executor %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:executor_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_title %}Мой профиль{% endblock %}
+
+{% block dashboard_actions %}
+<a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+    <i class="fas fa-edit me-1"></i>Редактировать
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card glass-card text-center">
+            <div class="card-body py-5">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                    <div class="avatar-lg mx-auto mb-3 avatar-placeholder">
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                {% endif %}
+                <h4 class="mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                <span class="badge bg-primary mb-3">{{ profile.get_role_display }}</span>
+                
+                {% if profile.company %}
+                <p class="text-muted mb-1"><i class="fas fa-building me-1"></i>{{ profile.company }}</p>
+                {% endif %}
+                {% if profile.position %}
+                <p class="text-muted mb-0"><i class="fas fa-briefcase me-1"></i>{{ profile.position }}</p>
+                {% endif %}
+                {% if profile.department %}
+                <p class="text-muted mb-0"><i class="fas fa-sitemap me-1"></i>{{ profile.department }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card glass-card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Информация о пользователе</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <small class="text-muted">Имя пользователя</small>
+                        <p class="mb-0 fw-medium">{{ user.username }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Email</small>
+                        <p class="mb-0 fw-medium">{{ user.email|default:"Не указан" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Имя</small>
+                        <p class="mb-0 fw-medium">{{ user.first_name|default:"Не указано" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Фамилия</small>
+                        <p class="mb-0 fw-medium">{{ user.last_name|default:"Не указана" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Телефон</small>
+                        <p class="mb-0 fw-medium">{{ profile.phone|default:"Не указан" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Telegram</small>
+                        <p class="mb-0 fw-medium">{{ profile.telegram|default:"Не указан" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Отдел</small>
+                        <p class="mb-0 fw-medium">{{ profile.department|default:"Не указан" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Должность</small>
+                        <p class="mb-0 fw-medium">{{ profile.position|default:"Не указана" }}</p>
+                    </div>
+                </div>
+                
+                {% if profile.bio %}
+                <hr>
+                <div>
+                    <small class="text-muted">О себе</small>
+                    <p class="mb-0">{{ profile.bio }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card glass-card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Дополнительно</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <small class="text-muted">Дата регистрации</small>
+                        <p class="mb-0">{{ profile.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Последнее обновление</small>
+                        <p class="mb-0">{{ profile.updated_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

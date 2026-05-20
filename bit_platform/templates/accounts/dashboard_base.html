@@ -1,0 +1,550 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="sidebar-header mb-4">
+                        <div class="d-flex align-items-center">
+                            {% if user.profile.avatar %}
+                                <img src="{{ user.profile.avatar.url }}" alt="" class="avatar-sm me-2">
+                            {% else %}
+                                <div class="avatar-sm me-2 avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                <small class="text-muted">{{ user.profile.get_role_display }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <ul class="nav flex-column">
+                        {% block sidebar_menu %}{% endblock %}
+                    </ul>
+                    
+                    <hr class="my-3">
+                    
+                    <!-- Общие разделы -->
+                    <div class="sidebar-section-title">Коммуникации</div>
+                    <ul class="nav flex-column mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'chat:list' %}">
+                                <i class="fas fa-comments me-2"></i>Сообщения
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'notifications:list' %}">
+                                <i class="fas fa-bell me-2"></i>Уведомления
+                                <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    {% if user.profile.role != 'client' %}
+                    <div class="sidebar-section-title">Отчёты</div>
+                    <ul class="nav flex-column mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'reports:list' %}">
+                                <i class="fas fa-file-alt me-2"></i>Отчёты
+                            </a>
+                        </li>
+                    </ul>
+                    {% endif %}
+
+                    {% if user.profile.role == 'analyst' or user.profile.role == 'admin' %}
+                    <div class="sidebar-section-title">Управление</div>
+                    <ul class="nav flex-column mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:staff_list' %}">
+                                <i class="fas fa-users-cog me-2"></i>Сотрудники
+                            </a>
+                        </li>
+                    </ul>
+                    {% endif %}
+
+                    <div class="sidebar-section-title">Документы</div>
+                    <ul class="nav flex-column mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'proposals:list' %}">
+                                <i class="fas fa-file-signature me-2"></i>КП
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'contracts:list' %}">
+                                <i class="fas fa-file-contract me-2"></i>Договоры
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'documents:list' %}">
+                                <i class="fas fa-folder-open me-2"></i>Документы
+                            </a>
+                        </li>
+                        {% if user.profile.role == 'analyst' or user.profile.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'documents:company_stamp' %}">
+                                <i class="fas fa-stamp me-2"></i>Печать и подпись
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <hr class="my-3">
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts:profile' %}">
+                                <i class="fas fa-user-cog me-2"></i>Настройки профиля
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'core:home' %}">
+                                <i class="fas fa-home me-2"></i>На главную
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link btn btn-link text-start w-100">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 dashboard-main">
+                <!-- Top Bar -->
+                <div class="dashboard-topbar d-flex justify-content-between align-items-center py-3 mb-3 border-bottom">
+                    <h1 class="h4 mb-0">{% block dashboard_title %}Личный кабинет{% endblock %}</h1>
+                    <div class="d-flex align-items-center">
+                        <!-- Quick Actions -->
+                        {% block dashboard_actions %}{% endblock %}
+                        
+                        <!-- Notification Bell -->
+                        <div class="dropdown ms-3">
+                            <button class="btn btn-link text-muted position-relative p-1" 
+                                    data-bs-toggle="dropdown" id="notificationDropdown">
+                                <i class="fas fa-bell fa-lg"></i>
+                                <span class="notification-dot" id="notificationDot" style="display: none;"></span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end notification-dropdown p-0" style="width: 350px;">
+                                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">Уведомления</h6>
+                                    <a href="{% url 'notifications:mark_all_read' %}" class="small text-primary"
+                                       onclick="event.preventDefault(); markAllRead();">Прочитать все</a>
+                                </div>
+                                <div class="notification-list-dropdown" id="notificationListDropdown">
+                                    <div class="text-center p-4 text-muted">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                </div>
+                                <div class="p-2 border-top text-center">
+                                    <a href="{% url 'notifications:list' %}" class="small">Все уведомления</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- User Menu -->
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-link p-0" data-bs-toggle="dropdown">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="" class="avatar-xs rounded-circle">
+                                {% else %}
+                                    <div class="avatar-xs rounded-circle avatar-placeholder-xs d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-user small"></i>
+                                    </div>
+                                {% endif %}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                    <i class="fas fa-user me-2"></i>Профиль
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'notifications:preferences' %}">
+                                    <i class="fas fa-cog me-2"></i>Настройки
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                {% block dashboard_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</div>
+
+<script>
+// Загрузка уведомлений
+async function loadNotifications() {
+    try {
+        const response = await fetch('{% url "notifications:api_recent" %}');
+        const data = await response.json();
+        
+        const badge = document.getElementById('notificationBadge');
+        const dot = document.getElementById('notificationDot');
+        const list = document.getElementById('notificationListDropdown');
+        
+        if (data.unread_count > 0) {
+            badge.textContent = data.unread_count;
+            badge.style.display = 'inline-flex';
+            dot.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+            dot.style.display = 'none';
+        }
+        
+        if (data.notifications.length === 0) {
+            list.innerHTML = '<div class="text-center p-4 text-muted"><i class="fas fa-bell-slash mb-2"></i><p class="mb-0 small">Нет уведомлений</p></div>';
+            return;
+        }
+        
+        list.innerHTML = data.notifications.map(n => `
+            <a href="${n.link || '#'}" class="notification-item d-flex p-3 ${!n.is_read ? 'unread' : ''}">
+                <div class="notification-icon-sm bg-${n.color}-soft text-${n.color} me-3">
+                    <i class="fas ${n.icon}"></i>
+                </div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between">
+                        <strong class="small ${!n.is_read ? 'text-dark' : 'text-muted'}">${n.title}</strong>
+                        <small class="text-muted">${n.created_at}</small>
+                    </div>
+                    <p class="mb-0 small text-muted text-truncate">${n.message}</p>
+                </div>
+            </a>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading notifications:', error);
+    }
+}
+
+async function markAllRead() {
+    try {
+        const response = await fetch('{% url "notifications:mark_all_read" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        if (response.ok) {
+            loadNotifications();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Загрузить уведомления при открытии dropdown
+document.getElementById('notificationDropdown').addEventListener('click', () => {
+    loadNotifications();
+});
+
+// Проверять новые уведомления каждые 30 секунд
+setInterval(async () => {
+    try {
+        const response = await fetch('{% url "notifications:api_unread_count" %}');
+        const data = await response.json();
+        
+        const badge = document.getElementById('notificationBadge');
+        const dot = document.getElementById('notificationDot');
+        
+        if (data.count > 0) {
+            badge.textContent = data.count;
+            badge.style.display = 'inline-flex';
+            dot.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+            dot.style.display = 'none';
+        }
+    } catch (error) {}
+}, 30000);
+
+// Первичная загрузка
+loadNotifications();
+</script>
+
+{# ── Плавающий виджет чата ── #}
+<style>
+.chat-widget-btn{position:fixed;bottom:24px;right:24px;z-index:1050;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;box-shadow:0 4px 20px rgba(79,70,229,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s}
+.chat-widget-btn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(79,70,229,.55)}
+.chat-widget-btn .cw-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:700;border:2px solid #fff}
+
+.cw-panel{position:fixed;bottom:90px;right:24px;z-index:1049;width:380px;height:520px;background:#fff;border-radius:16px;box-shadow:0 10px 50px rgba(0,0,0,.2);display:none;flex-direction:column;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.cw-panel.open{display:flex}
+
+/* Header */
+.cw-hdr{padding:14px 16px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.cw-hdr h6{margin:0;flex:1;font-size:15px;font-weight:600}
+.cw-hdr-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s}
+.cw-hdr-btn:hover{background:rgba(255,255,255,.25)}
+
+/* List view */
+.cw-body{flex:1;overflow-y:auto;background:#fafbfc}
+.cw-conv{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f5;cursor:pointer;transition:background .15s;text-decoration:none;color:inherit}
+.cw-conv:hover{background:#f0f4ff}
+.cw-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);display:flex;align-items:center;justify-content:center;color:#4f46e5;font-size:15px;flex-shrink:0;margin-right:12px;font-weight:600}
+.cw-av.req{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#16a34a}
+.cw-cv-info{flex:1;min-width:0}
+.cw-cv-name{font-weight:600;font-size:13px;margin-bottom:2px;display:flex;justify-content:space-between;align-items:center}
+.cw-cv-name small{color:#94a3b8;font-weight:400;font-size:11px}
+.cw-cv-txt{font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-ubadge{background:#ef4444;color:#fff;font-size:10px;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;margin-left:8px;flex-shrink:0}
+
+/* Chat view */
+.cw-msgs{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:6px;background:#fafbfc}
+.cw-msg{max-width:80%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.4;word-wrap:break-word;animation:cwSlide .2s ease}
+@keyframes cwSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.cw-msg.me{align-self:flex-end;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-bottom-right-radius:4px}
+.cw-msg.other{align-self:flex-start;background:#fff;border:1px solid #e8ecf1;border-bottom-left-radius:4px}
+.cw-msg .cw-msg-author{font-size:11px;font-weight:600;color:#4f46e5;margin-bottom:2px}
+.cw-msg.me .cw-msg-author{color:rgba(255,255,255,.7)}
+.cw-msg .cw-msg-time{font-size:10px;color:#94a3b8;margin-top:2px;text-align:right}
+.cw-msg.me .cw-msg-time{color:rgba(255,255,255,.6)}
+
+/* Input */
+.cw-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #f0f0f5;background:#fff;flex-shrink:0}
+.cw-input input{flex:1;border:1px solid #e2e8f0;border-radius:20px;padding:8px 14px;font-size:13px;outline:none;transition:border-color .2s}
+.cw-input input:focus{border-color:#4f46e5;box-shadow:0 0 0 2px rgba(79,70,229,.1)}
+.cw-input button{width:36px;height:36px;border-radius:50%;border:none;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.cw-input button:hover{transform:scale(1.05)}
+
+/* Footer */
+.cw-ft{padding:8px 16px;border-top:1px solid #f0f0f5;text-align:center;background:#fff;flex-shrink:0}
+.cw-ft a{font-size:12px;color:#4f46e5;text-decoration:none;font-weight:500}
+
+.cw-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px;padding:20px}
+.cw-empty-state i{font-size:32px;margin-bottom:10px;opacity:.5}
+</style>
+
+<button class="chat-widget-btn" id="chatWidgetBtn" title="Чат">
+    <i class="fas fa-comments fa-lg"></i>
+    <span class="cw-badge" id="chatWidgetBadge" style="display:none">0</span>
+</button>
+
+<div class="cw-panel" id="cwPanel">
+    <!-- Header -->
+    <div class="cw-hdr" id="cwHeader">
+        <button class="cw-hdr-btn" id="cwBackBtn" style="display:none" title="Назад"><i class="fas fa-arrow-left"></i></button>
+        <h6 id="cwTitle"><i class="fas fa-comments me-2"></i>Сообщения</h6>
+        <button class="cw-hdr-btn" id="cwCloseBtn" title="Закрыть">&times;</button>
+    </div>
+
+    <!-- List screen -->
+    <div class="cw-body" id="cwListScreen">
+        <div class="cw-empty-state"><i class="fas fa-spinner fa-spin"></i>Загрузка...</div>
+    </div>
+
+    <!-- Chat screen (hidden by default) -->
+    <div class="cw-msgs" id="cwChatScreen" style="display:none"></div>
+    <div class="cw-input" id="cwInputArea" style="display:none">
+        <input type="text" id="cwMsgInput" placeholder="Напишите сообщение..." autocomplete="off">
+        <button id="cwSendBtn"><i class="fas fa-paper-plane" style="font-size:13px"></i></button>
+    </div>
+
+    <!-- Footer -->
+    <div class="cw-ft">
+        <a href="{% url 'chat:list' %}" id="cwFooterLink"><i class="fas fa-external-link-alt me-1"></i>Все сообщения</a>
+    </div>
+</div>
+
+<script>
+(function(){
+    const btn = document.getElementById('chatWidgetBtn');
+    const panel = document.getElementById('cwPanel');
+    const badge = document.getElementById('chatWidgetBadge');
+    const listScreen = document.getElementById('cwListScreen');
+    const chatScreen = document.getElementById('cwChatScreen');
+    const inputArea = document.getElementById('cwInputArea');
+    const msgInput = document.getElementById('cwMsgInput');
+    const sendBtn = document.getElementById('cwSendBtn');
+    const backBtn = document.getElementById('cwBackBtn');
+    const closeBtn = document.getElementById('cwCloseBtn');
+    const title = document.getElementById('cwTitle');
+    const footerLink = document.getElementById('cwFooterLink');
+    const csrf = '{{ csrf_token }}';
+
+    let currentConvId = null;
+    let lastMsgId = 0;
+    let pollInterval = null;
+
+    btn.addEventListener('click', ()=>{
+        panel.classList.toggle('open');
+        if(panel.classList.contains('open')){
+            if(currentConvId) return;
+            showList();
+        }
+    });
+    closeBtn.addEventListener('click', ()=> panel.classList.remove('open'));
+    backBtn.addEventListener('click', showList);
+
+    function showList(){
+        currentConvId = null;
+        if(pollInterval){clearInterval(pollInterval);pollInterval=null;}
+        listScreen.style.display='';
+        chatScreen.style.display='none';
+        inputArea.style.display='none';
+        backBtn.style.display='none';
+        title.innerHTML='<i class="fas fa-comments me-2"></i>Сообщения';
+        footerLink.href="{% url 'chat:list' %}";
+        footerLink.innerHTML='<i class="fas fa-external-link-alt me-1"></i>Все сообщения';
+        loadConversations();
+    }
+
+    async function loadConversations(){
+        try{
+            const r=await fetch('{% url "chat:widget_data" %}');
+            const d=await r.json();
+            if(d.total_unread>0){badge.textContent=d.total_unread;badge.style.display='flex';}
+            else{badge.style.display='none';}
+            if(!d.conversations.length){
+                listScreen.innerHTML='<div class="cw-empty-state"><i class="fas fa-comments"></i>Нет диалогов<br><small>Напишите кому-нибудь из чата</small></div>';
+                return;
+            }
+            listScreen.innerHTML=d.conversations.map(c=>`
+                <div class="cw-conv" data-id="${c.id}" data-title="${escape(c.title)}">
+                    <div class="cw-av ${c.type==='request'?'req':''}">${c.type==='request'?'<i class="fas fa-clipboard-list"></i>':c.type==='group'?'<i class="fas fa-users"></i>':c.title[0].toUpperCase()}</div>
+                    <div class="cw-cv-info">
+                        <div class="cw-cv-name"><span>${c.title}</span><small>${c.last_time}</small></div>
+                        <div class="cw-cv-txt">${c.last_text||'Нет сообщений'}</div>
+                    </div>
+                    ${c.unread?'<span class="cw-ubadge">'+c.unread+'</span>':''}
+                </div>
+            `).join('');
+            listScreen.querySelectorAll('.cw-conv').forEach(el=>{
+                el.addEventListener('click',()=>openChat(parseInt(el.dataset.id), el.dataset.title));
+            });
+        }catch(e){
+            listScreen.innerHTML='<div class="cw-empty-state">Ошибка загрузки</div>';
+        }
+    }
+
+    async function openChat(convId, convTitle){
+        currentConvId=convId;
+        lastMsgId=0;
+        listScreen.style.display='none';
+        chatScreen.style.display='flex';
+        inputArea.style.display='flex';
+        backBtn.style.display='flex';
+        title.textContent=unescape(convTitle);
+        footerLink.href=`/chat/${convId}/`;
+        footerLink.innerHTML='<i class="fas fa-expand-alt me-1"></i>Открыть полностью';
+        chatScreen.innerHTML='<div class="cw-empty-state"><i class="fas fa-spinner fa-spin"></i></div>';
+
+        await loadMessages();
+        if(pollInterval) clearInterval(pollInterval);
+        pollInterval=setInterval(pollNewMessages, 3000);
+        msgInput.focus();
+    }
+
+    async function loadMessages(){
+        try{
+            const r=await fetch(`/chat/widget-messages/${currentConvId}/`);
+            const d=await r.json();
+            if(!d.messages.length){
+                chatScreen.innerHTML='<div class="cw-empty-state"><i class="fas fa-comments"></i>Начните диалог</div>';
+                return;
+            }
+            chatScreen.innerHTML=d.messages.map(m=>renderMsg(m)).join('');
+            d.messages.forEach(m=>{if(m.id>lastMsgId)lastMsgId=m.id;});
+            chatScreen.scrollTop=chatScreen.scrollHeight;
+        }catch(e){
+            chatScreen.innerHTML='<div class="cw-empty-state">Ошибка</div>';
+        }
+    }
+
+    async function pollNewMessages(){
+        if(!currentConvId)return;
+        try{
+            const r=await fetch(`/chat/widget-messages/${currentConvId}/?last_id=${lastMsgId}`);
+            const d=await r.json();
+            if(d.messages.length){
+                d.messages.forEach(m=>{
+                    if(!document.querySelector(`[data-mid="${m.id}"]`)){
+                        chatScreen.insertAdjacentHTML('beforeend',renderMsg(m));
+                    }
+                    if(m.id>lastMsgId)lastMsgId=m.id;
+                });
+                chatScreen.scrollTop=chatScreen.scrollHeight;
+            }
+        }catch(e){}
+    }
+
+    function renderMsg(m){
+        const cls=m.is_me?'me':'other';
+        return `<div class="cw-msg ${cls}" data-mid="${m.id}">
+            ${!m.is_me?`<div class="cw-msg-author">${esc(m.author_name)}</div>`:''}
+            <div>${esc(m.text)}</div>
+            <div class="cw-msg-time">${m.time}</div>
+        </div>`;
+    }
+
+    function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+    function escape(s){return s.replace(/'/g,"&#39;").replace(/"/g,"&quot;");}
+    function unescape(s){const d=document.createElement('div');d.innerHTML=s;return d.textContent;}
+
+    // Send message
+    async function sendMessage(){
+        const text=msgInput.value.trim();
+        if(!text||!currentConvId)return;
+        msgInput.value='';
+        try{
+            const fd=new FormData();
+            fd.append('text',text);
+            fd.append('csrfmiddlewaretoken',csrf);
+            const r=await fetch(`/chat/${currentConvId}/send/`,{method:'POST',body:fd,headers:{'X-Requested-With':'XMLHttpRequest'}});
+            const d=await r.json();
+            if(d.success){
+                const m={id:d.message.id,text:d.message.text,author_name:d.message.author.name,is_me:true,time:d.message.created_at};
+                chatScreen.insertAdjacentHTML('beforeend',renderMsg(m));
+                if(m.id>lastMsgId)lastMsgId=m.id;
+                chatScreen.scrollTop=chatScreen.scrollHeight;
+            }
+        }catch(e){}
+        msgInput.focus();
+    }
+
+    sendBtn.addEventListener('click',sendMessage);
+    msgInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+
+    // Badge polling
+    async function checkUnread(){
+        try{
+            const r=await fetch('{% url "chat:widget_data" %}');
+            const d=await r.json();
+            if(d.total_unread>0){badge.textContent=d.total_unread;badge.style.display='flex';}
+            else{badge.style.display='none';}
+        }catch(e){}
+    }
+    setInterval(checkUnread,30000);
+    checkUnread();
+})();
+</script>
+{% endblock %}

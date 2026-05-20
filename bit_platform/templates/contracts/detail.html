@@ -1,0 +1,252 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load l10n %}
+
+{% block dashboard_title %}<i class="fas fa-file-contract me-2"></i>{{ contract.number }}{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'contracts:list' %}"><i class="fas fa-file-contract me-2"></i>Все договоры</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'requests_app:request_detail' contract.request.pk %}"><i class="fas fa-clipboard-list me-2"></i>К заявке</a></li>
+{% if can_manage and contract.status == 'active' or can_manage and contract.status == 'signed' %}
+<li class="nav-item"><a class="nav-link" href="{% url 'documents:generate_bundle' contract.request.pk %}"><i class="fas fa-folder-plus me-2"></i>Акт + Счёт</a></li>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card glass-card animate__animated animate__fadeInUp mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ contract.subject }}</h5>
+                <span class="badge bg-{% if contract.status == 'active' or contract.status == 'signed' %}success{% elif contract.status == 'terminated' %}danger{% elif contract.status == 'sent' %}primary{% else %}secondary{% endif %} fs-6">
+                    {{ contract.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-clipboard-list me-1"></i>Заявка:
+                    <a href="{% url 'requests_app:request_detail' contract.request.pk %}">{{ contract.request.number }}</a> — {{ contract.request.title }}
+                </p>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <small class="text-muted">Сумма (из КП)</small>
+                        <div class="h5 fw-bold mb-0">{{ contract.amount|floatformat:2 }} ₽</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Дата начала</small>
+                        <div class="fw-medium">{{ contract.start_date|date:"d.m.Y"|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Дата окончания</small>
+                        <div class="fw-medium">{{ contract.end_date|date:"d.m.Y"|default:"—" }}</div>
+                    </div>
+                </div>
+
+                {% if contract.payment_terms %}
+                <hr>
+                <h6>Условия оплаты</h6>
+                <p class="mb-0">{{ contract.payment_terms|linebreaks }}</p>
+                {% endif %}
+
+                {% if contract.proposal %}
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Связанное КП</small>
+                        <div><a href="{% url 'proposals:detail' contract.proposal.pk %}">{{ contract.proposal.number }}</a> — {{ contract.proposal.title }}</div>
+                    </div>
+                    <span class="badge bg-{% if contract.proposal.status == 'accepted' %}success{% else %}secondary{% endif %}">{{ contract.proposal.get_status_display }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Подписание клиентом ── #}
+        {% if is_client and contract.status == 'sent' %}
+        <div class="card glass-card border-primary mb-4">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="mb-0 text-primary"><i class="fas fa-signature me-2"></i>Договор на подписание</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Ознакомьтесь с договором и подпишите его или отклоните.</p>
+                {% for doc in contract.documents.all %}
+                {% if doc.doc_type == 'contract' %}
+                <div class="d-flex gap-2 mb-3">
+                    <a href="{% url 'documents:download' doc.pk %}" class="btn btn-outline-primary flex-fill">
+                        <i class="fas fa-file-word me-1"></i>Скачать (Word)
+                    </a>
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="d-grid gap-2">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="client_sign">
+                        <input type="hidden" name="decision" value="sign">
+                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Подтвердить подписание договора?')">
+                            <i class="fas fa-check-circle me-1"></i>Подписать договор
+                        </button>
+                    </form>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="client_sign">
+                        <input type="hidden" name="decision" value="reject">
+                        <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Отклонить договор?')">
+                            <i class="fas fa-times-circle me-1"></i>Отклонить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% elif is_client and contract.status == 'signed' %}
+        <div class="alert alert-success mb-4"><i class="fas fa-check-circle me-1"></i>Договор подписан</div>
+        {% endif %}
+
+        {# ── Связанные проекты ── #}
+        {% if projects %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Созданные проекты</h5>
+            </div>
+            <div class="card-body p-0">
+                {% for project in projects %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <a href="{% url 'projects:project_detail' project.pk %}" class="fw-semibold text-decoration-none">{{ project.name }}</a>
+                        <div class="small text-muted">Задач: {{ project.tasks.count }}</div>
+                    </div>
+                    <span class="badge bg-{{ project.status_color }}">{{ project.get_status_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {# ── Отправить на подпись (когда черновик) ── #}
+        {% if can_manage and contract.status == 'draft' or can_manage and contract.status == 'terminated' %}
+        <div class="card glass-card mb-4 border-primary">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_status">
+                    <input type="hidden" name="status" value="sent">
+                    <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Отправить договор клиенту на подпись?')">
+                        <i class="fas fa-paper-plane me-1"></i>Отправить на подпись
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-edit me-2"></i>Правки договора</h6></div>
+            <div class="card-body">
+                <form method="post" class="row g-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_contract">
+                    <div class="col-12">
+                        <label class="form-label small mb-1">Предмет</label>
+                        <input type="text" name="subject" class="form-control form-control-sm" value="{{ contract.subject }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">Сумма, ₽</label>
+                        <input type="number" step="0.01" name="amount" class="form-control form-control-sm" value="{% localize off %}{{ contract.amount }}{% endlocalize %}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">Дата начала</label>
+                        <input type="date" name="start_date" class="form-control form-control-sm" value="{% if contract.start_date %}{{ contract.start_date|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small mb-1">Дата завершения</label>
+                        <input type="date" name="end_date" class="form-control form-control-sm" value="{% if contract.end_date %}{{ contract.end_date|date:'Y-m-d' }}{% endif %}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-1">Условия оплаты</label>
+                        <textarea name="payment_terms" class="form-control form-control-sm" rows="2">{{ contract.payment_terms }}</textarea>
+                    </div>
+                    <div class="col-12 d-grid mt-2">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-save me-1"></i>Сохранить правки
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Создать проект (когда подписан, но проекта нет) ── #}
+        {% if can_manage and not projects and contract.status == 'signed' or can_manage and not projects and contract.status == 'active' %}
+        <div class="card glass-card mb-4 border-success">
+            <div class="card-body">
+                <p class="text-muted small mb-2">Договор подписан, но проект ещё не создан.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_project">
+                    <button type="submit" class="btn btn-success w-100" onclick="return confirm('Создать проект и задачи из позиций КП?')">
+                        <i class="fas fa-project-diagram me-1"></i>Создать проект
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Документ договора ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-file-download me-2"></i>Документ договора</h6></div>
+            <div class="card-body d-grid gap-2">
+                {% for doc in contract.documents.all %}
+                {% if doc.doc_type == 'contract' %}
+                <a href="{% url 'documents:download' doc.pk %}" class="btn btn-outline-primary">
+                    <i class="fas fa-file-word me-1"></i>Скачать договор (Word)
+                </a>
+                <a href="{% url 'documents:detail' doc.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-eye me-1"></i>Открыть карточку документа
+                </a>
+                {% endif %}
+                {% empty %}
+                <small class="text-muted">Документ договора появится после отправки на подписание.</small>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ── Действия ── #}
+        {% if can_manage %}
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Действия</h6></div>
+            <div class="card-body d-grid gap-2">
+                <a href="{% url 'documents:generate_bundle' contract.request.pk %}" class="btn btn-outline-success"
+                   onclick="return confirm('Будут сгенерированы акт и счёт. Продолжить?')">
+                    <i class="fas fa-folder-plus me-1"></i>Сформировать акт + счёт
+                </a>
+                {# ── Связанные документы: скачивание ── #}
+                {% for doc in contract.documents.all %}
+                <div class="d-flex gap-2 mt-1">
+                    <a href="{% url 'documents:download' doc.pk %}" class="btn btn-sm btn-outline-primary flex-fill">
+                        <i class="fas fa-file-word me-1"></i>{{ doc.get_doc_type_display }} Word
+                    </a>
+                </div>
+                {% endfor %}
+                {% if projects %}
+                {% for project in projects %}
+                <a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-outline-primary">
+                    <i class="fas fa-tasks me-1"></i>К проекту: {{ project.name|truncatechars:20 }}
+                </a>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Сведения ── #}
+        <div class="card glass-card">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Сведения</h6></div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Ответственный:</strong><br>{{ contract.responsible.get_full_name|default:contract.responsible.username|default:"—" }}</p>
+                <p class="mb-2"><strong>Создан:</strong><br>{{ contract.created_at|date:"d.m.Y H:i" }}</p>
+                <p class="mb-0"><strong>Обновлён:</strong><br>{{ contract.updated_at|date:"d.m.Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

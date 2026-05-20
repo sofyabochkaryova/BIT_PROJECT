@@ -1,0 +1,253 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}
+<i class="fas fa-bell me-2"></i>Уведомления
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'notifications:list' %}">
+        <i class="fas fa-bell me-2"></i>Уведомления
+        {% if unread_count > 0 %}
+            <span class="badge bg-danger ms-2">{{ unread_count }}</span>
+        {% endif %}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'notifications:preferences' %}">
+        <i class="fas fa-cog me-2"></i>Настройки
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_actions %}
+<div class="btn-group me-2">
+    <form method="post" action="{% url 'notifications:mark_all_read' %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-check-double me-1"></i>Прочитать все
+        </button>
+    </form>
+    <form method="post" action="{% url 'notifications:clear_all' %}" class="d-inline ms-1">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-secondary" 
+                onclick="return confirm('Удалить все прочитанные уведомления?')">
+            <i class="fas fa-trash me-1"></i>Очистить
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Фильтры -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'notifications:list' %}" 
+                               class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                Все
+                            </a>
+                            <a href="{% url 'notifications:list' %}?status=unread" 
+                               class="btn btn-sm {% if current_status == 'unread' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                <i class="fas fa-circle text-danger me-1" style="font-size: 8px;"></i>
+                                Непрочитанные
+                            </a>
+                            <a href="{% url 'notifications:list' %}?status=read" 
+                               class="btn btn-sm {% if current_status == 'read' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                <i class="fas fa-check me-1"></i>
+                                Прочитанные
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <select class="form-select form-select-sm d-inline-block w-auto" 
+                                onchange="filterByType(this.value)">
+                            <option value="">Все типы</option>
+                            <option value="request" {% if current_type == 'request' %}selected{% endif %}>Заявки</option>
+                            <option value="task" {% if current_type == 'task' %}selected{% endif %}>Задачи</option>
+                            <option value="project" {% if current_type == 'project' %}selected{% endif %}>Проекты</option>
+                            <option value="message" {% if current_type == 'message' %}selected{% endif %}>Сообщения</option>
+                            <option value="system" {% if current_type == 'system' %}selected{% endif %}>Системные</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Список уведомлений -->
+<div class="notification-list">
+    {% if notifications %}
+        {% for notification in notifications %}
+        <div class="card notification-card mb-3 shadow-sm border-0 {% if not notification.is_read %}notification-unread{% endif %}"
+             data-notification-id="{{ notification.pk }}">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <div class="notification-icon bg-{{ notification.type_color }}-soft text-{{ notification.type_color }}">
+                            <i class="fas {{ notification.icon }}"></i>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                    {{ notification.title }}
+                                </h6>
+                                <p class="text-muted mb-0 notification-message">
+                                    {{ notification.message|truncatewords:30 }}
+                                </p>
+                            </div>
+                            <div class="notification-meta text-end">
+                                <small class="text-muted d-block">
+                                    {{ notification.created_at|timesince }} назад
+                                </small>
+                                {% if not notification.is_read %}
+                                    <span class="badge bg-primary-soft text-primary mt-1">Новое</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if notification.sender %}
+                            <small class="text-muted">
+                                <i class="fas fa-user me-1"></i>
+                                {{ notification.sender.get_full_name|default:notification.sender.username }}
+                            </small>
+                        {% endif %}
+                    </div>
+                    <div class="col-auto">
+                        <div class="notification-actions">
+                            {% if notification.link %}
+                                <a href="{{ notification.link }}" class="btn btn-sm btn-outline-primary me-1"
+                                   title="Открыть">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            {% endif %}
+                            {% if not notification.is_read %}
+                                <form method="post" action="{% url 'notifications:mark_read' notification.pk %}" 
+                                      class="d-inline notification-action-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Прочитано">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'notifications:delete' notification.pk %}" 
+                                  class="d-inline notification-action-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Пагинация -->
+        {% if notifications.has_other_pages %}
+        <nav aria-label="Навигация по страницам" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if notifications.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ notifications.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in notifications.paginator.page_range %}
+                    {% if notifications.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if notifications.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ notifications.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <div class="empty-state">
+                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Нет уведомлений</h5>
+                <p class="text-muted">
+                    {% if current_status == 'unread' %}
+                        У вас нет непрочитанных уведомлений
+                    {% elif current_status == 'read' %}
+                        У вас нет прочитанных уведомлений
+                    {% else %}
+                        Уведомления появятся здесь
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function filterByType(type) {
+    let url = '{% url "notifications:list" %}';
+    let params = new URLSearchParams(window.location.search);
+    
+    if (type) {
+        params.set('type', type);
+    } else {
+        params.delete('type');
+    }
+    
+    window.location.href = url + '?' + params.toString();
+}
+
+// AJAX обработка действий
+document.querySelectorAll('.notification-action-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const response = await fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            const card = this.closest('.notification-card');
+            if (this.action.includes('delete')) {
+                card.style.transition = 'all 0.3s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(100px)';
+                setTimeout(() => card.remove(), 300);
+            } else if (this.action.includes('read')) {
+                card.classList.remove('notification-unread');
+                card.querySelector('.badge.bg-primary-soft')?.remove();
+                this.closest('.notification-actions').querySelector('form:first-of-type')?.remove();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

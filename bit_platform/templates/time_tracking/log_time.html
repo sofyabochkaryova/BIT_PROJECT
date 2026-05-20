@@ -1,0 +1,81 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block title %}Учёт времени — {{ task.title }}{% endblock %}
+{% block dashboard_title %}<i class="fas fa-clock me-2"></i>Учёт времени{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'tasks:task_detail' task.pk %}"><i class="fas fa-arrow-left me-2"></i>К задаче</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'time_tracking:my_reports' %}"><i class="fas fa-file-alt me-2"></i>Мои отчёты</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Записать время по задаче «{{ task.title|truncatechars:40 }}»</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Дата</label>
+                            <input type="date" class="form-control" name="date" value="{{ today }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Часы</label>
+                            <input type="number" class="form-control" name="hours" step="0.25" min="0.25" max="24" placeholder="2.5" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Оценка задачи</label>
+                            <div class="form-control-plaintext fw-bold">{{ task.estimated_hours|default:"—" }} ч</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Что сделано</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Опишите проделанную работу..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button class="btn btn-success"><i class="fas fa-save me-1"></i>Записать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-list me-2"></i>Мои записи</h6>
+                <span class="badge bg-primary">{{ total_mine|floatformat:1 }} ч</span>
+            </div>
+            <div class="card-body p-0">
+                {% for e in entries %}
+                <div class="d-flex justify-content-between px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <div class="small fw-medium">{{ e.date|date:"d.m.Y" }}</div>
+                        <div class="small text-muted">{{ e.description|truncatechars:50 }}</div>
+                    </div>
+                    <span class="badge bg-success align-self-center">{{ e.hours }}ч</span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3 mb-0">Записей пока нет</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if task.estimated_hours %}
+        <div class="card glass-card">
+            <div class="card-body text-center">
+                <div class="mb-2 text-muted small">Прогресс</div>
+                <div class="progress mb-2" style="height:12px">
+                    {% widthratio total_mine task.estimated_hours 100 as pct %}
+                    <div class="progress-bar {% if pct > 100 %}bg-danger{% elif pct > 80 %}bg-warning{% else %}bg-success{% endif %}" style="width:{% widthratio total_mine task.estimated_hours 100 %}%"></div>
+                </div>
+                <small>{{ total_mine|floatformat:1 }} из {{ task.estimated_hours|floatformat:1 }} ч ({% widthratio total_mine task.estimated_hours 100 %}%)</small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

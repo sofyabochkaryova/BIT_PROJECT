@@ -1,0 +1,252 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}
+<i class="fas fa-cog me-2"></i>Настройки уведомлений
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'notifications:list' %}">
+        <i class="fas fa-bell me-2"></i>Уведомления
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'notifications:preferences' %}">
+        <i class="fas fa-cog me-2"></i>Настройки
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post" id="preferencesForm">
+            {% csrf_token %}
+            
+            <!-- Email уведомления -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope me-2 text-primary"></i>
+                        Email уведомления
+                    </h5>
+                    <small class="text-muted">Настройте какие уведомления получать на почту</small>
+                </div>
+                <div class="card-body">
+                    <div class="preferences-list">
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Новые заявки</h6>
+                                    <small class="text-muted">Получать уведомления о новых заявках от клиентов</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_new_request" id="email_new_request"
+                                           {% if preferences.email_new_request %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Изменения заявок</h6>
+                                    <small class="text-muted">Уведомления об изменении статуса заявок</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_request_update" id="email_request_update"
+                                           {% if preferences.email_request_update %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Новые задачи</h6>
+                                    <small class="text-muted">Получать уведомления о назначенных задачах</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_new_task" id="email_new_task"
+                                           {% if preferences.email_new_task %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Изменения задач</h6>
+                                    <small class="text-muted">Уведомления об изменении статуса задач</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_task_update" id="email_task_update"
+                                           {% if preferences.email_task_update %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Новые сообщения</h6>
+                                    <small class="text-muted">Уведомления о новых сообщениях в чате</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_new_message" id="email_new_message"
+                                           {% if preferences.email_new_message %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="preference-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Еженедельная сводка</h6>
+                                    <small class="text-muted">Получать еженедельный отчёт о работе</small>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" 
+                                           name="email_weekly_digest" id="email_weekly_digest"
+                                           {% if preferences.email_weekly_digest %}checked{% endif %}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Push уведомления -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-transparent border-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-mobile-alt me-2 text-success"></i>
+                        Push уведомления
+                    </h5>
+                    <small class="text-muted">Мгновенные уведомления в браузере</small>
+                </div>
+                <div class="card-body">
+                    <div class="preference-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Включить push-уведомления</h6>
+                                <small class="text-muted">Получать уведомления даже когда браузер свёрнут</small>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" 
+                                       name="push_enabled" id="push_enabled"
+                                       {% if preferences.push_enabled %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Сохранить настройки
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-lightbulb me-2"></i>Подсказка
+                </h6>
+                <p class="small text-muted mb-0">
+                    Настройте уведомления так, чтобы получать только важную информацию. 
+                    Это поможет не отвлекаться на второстепенные события и сосредоточиться на работе.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.preference-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+
+.preference-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.preference-item:first-child {
+    padding-top: 0;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+</style>
+
+<script>
+// Автосохранение при изменении
+document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        // Показать индикатор сохранения
+        const item = this.closest('.preference-item');
+        item.style.opacity = '0.7';
+        
+        // Отправить форму через AJAX
+        const form = document.getElementById('preferencesForm');
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            if (response.ok) {
+                item.style.opacity = '1';
+                // Показать toast об успешном сохранении
+                showToast('Настройки сохранены');
+            }
+        });
+    });
+});
+
+function showToast(message) {
+    // Создаём toast уведомление
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed bottom-0 end-0 p-3';
+    toast.style.zIndex = '11';
+    toast.innerHTML = `
+        <div class="toast show" role="alert">
+            <div class="toast-body">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                ${message}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

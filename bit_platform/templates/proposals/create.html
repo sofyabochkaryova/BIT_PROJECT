@@ -1,0 +1,147 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load l10n %}
+
+{% block dashboard_title %}<i class="fas fa-plus-circle me-2"></i>Создание КП{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'requests_app:request_detail' request_obj.pk %}"><i class="fas fa-arrow-left me-2"></i>К заявке</a></li>
+<li class="nav-item"><a class="nav-link active" href="#"><i class="fas fa-file-signature me-2"></i>Новое КП</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card glass-card animate__animated animate__fadeInUp">
+            <div class="card-body">
+                <form method="post" id="proposalForm">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Название КП</label>
+                            <input class="form-control" name="title" value="КП по заявке {{ request_obj.number }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Действительно до</label>
+                            <input type="date" class="form-control" name="valid_until">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Объём работ</label>
+                            <textarea class="form-control" rows="3" name="scope" placeholder="Опишите объём работ по проекту">{{ request_obj.description }}</textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h6 class="mb-3"><i class="fas fa-list-ol me-2"></i>Этапы и стоимость</h6>
+
+                    {% if auto_stages %}
+                    <div class="alert alert-info py-2 mb-3">
+                        <small><i class="fas fa-magic me-1"></i>Этапы заполнены автоматически из шаблона «{{ request_obj.get_service_type_display }}». Вы можете изменить описания и стоимость.</small>
+                    </div>
+                    {% endif %}
+
+                    <div id="itemsContainer">
+                        {% if auto_stages %}
+                        <div class="row g-2 mb-2 text-muted small">
+                            <div class="col-md-3">Этап</div>
+                            <div class="col-md-3">Описание</div>
+                            <div class="col-md-1 text-center">Часы</div>
+                            <div class="col-md-2 text-center">Ставка, ₽/ч</div>
+                            <div class="col-md-2 text-center">Итого, ₽</div>
+                            <div class="col-md-1"></div>
+                        </div>
+                        {% for stage in auto_stages %}
+                        <div class="row g-2 mb-2 item-row align-items-start">
+                            <div class="col-md-3"><input class="form-control form-control-sm" name="stage_name" placeholder="Название этапа" value="{{ stage.name }}" readonly></div>
+                            <div class="col-md-3"><textarea class="form-control form-control-sm" name="item_description" rows="2">{% if stage.description %}{{ stage.description }}{% else %}Выполнение работ по этапу «{{ stage.name }}»{% endif %}</textarea></div>
+                            <div class="col-md-1"><input class="form-control form-control-sm text-center stage-hours" type="number" step="1" name="stage_hours" value="{% localize off %}{{ stage.hours|floatformat:0 }}{% endlocalize %}"></div>
+                            <div class="col-md-2"><input class="form-control form-control-sm text-center stage-rate" type="number" step="0.01" name="stage_rate" value="{% localize off %}{{ stage.unit_price }}{% endlocalize %}"></div>
+                            <div class="col-md-2"><input class="form-control form-control-sm text-center fw-bold stage-total" type="number" step="0.01" name="unit_price" value="{% localize off %}{{ stage.total }}{% endlocalize %}" readonly></div>
+                            <div class="col-md-1"></div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="row g-2 mb-2 item-row">
+                            <div class="col-md-3"><input class="form-control form-control-sm" name="stage_name" placeholder="Название этапа"></div>
+                            <div class="col-md-4"><input class="form-control form-control-sm" name="item_description" placeholder="Подробное описание работ по этапу"></div>
+                            <div class="col-md-1"><input class="form-control form-control-sm" type="number" name="stage_hours" placeholder="Ч" value="8"></div>
+                            <div class="col-md-1"><input class="form-control form-control-sm" type="number" name="stage_rate" placeholder="₽/ч" value="2000"></div>
+                            <div class="col-md-2"><input class="form-control form-control-sm" type="number" step="0.01" name="unit_price" placeholder="Стоимость, ₽"></div>
+                            <div class="col-md-1 d-flex align-items-center"><button type="button" class="btn btn-outline-danger btn-sm remove-item" title="Удалить"><i class="fas fa-trash-alt"></i></button></div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button class="btn btn-primary"><i class="fas fa-save me-1"></i>Сформировать КП</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        {# Информация о заявке #}
+        <div class="card glass-card mb-3">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Заявка</h6></div>
+            <div class="card-body">
+                <div class="mb-2"><small class="text-muted">Номер</small><div>{{ request_obj.number }}</div></div>
+                <div class="mb-2"><small class="text-muted">Клиент</small><div>{{ request_obj.client.get_full_name|default:request_obj.client.username }}</div></div>
+                <div class="mb-2"><small class="text-muted">Компания</small><div>{{ request_obj.company_name|default:"—" }}</div></div>
+                <div class="mb-2"><small class="text-muted">Тип услуги</small><div>{{ request_obj.get_service_type_display }}</div></div>
+                {% if request_obj.budget_from or request_obj.budget_to %}
+                <div class="mb-2"><small class="text-muted">Бюджет</small><div>{{ request_obj.budget_from|floatformat:0|default:"" }} — {{ request_obj.budget_to|floatformat:0|default:"" }} ₽</div></div>
+                {% endif %}
+                {% if request_obj.deadline %}
+                <div class="mb-0"><small class="text-muted">Срок</small><div>{{ request_obj.deadline|date:"d.m.Y" }}</div></div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Предварительная оценка из шаблона #}
+        {% if auto_total %}
+        <div class="card glass-card mb-3 border-primary">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Шаблонная оценка</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Этапов:</span>
+                    <span class="fw-bold">{{ auto_stages|length }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Итого:</span>
+                    <span class="fw-bold text-primary fs-5">{{ auto_total|floatformat:0 }} ₽</span>
+                </div>
+                {% if request_obj.budget_to %}
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="text-muted">Бюджет клиента:</span>
+                    <span class="fw-bold">{{ request_obj.budget_from|floatformat:0|default:"0" }} — {{ request_obj.budget_to|floatformat:0 }} ₽</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-item')) {
+        const rows = document.querySelectorAll('.item-row');
+        if (rows.length > 1) e.target.closest('.item-row').remove();
+    }
+});
+// Авто-расчёт итого = часы × ставка
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('stage-hours') || e.target.classList.contains('stage-rate')) {
+        const row = e.target.closest('.item-row');
+        if (!row) return;
+        const hours = parseFloat(row.querySelector('.stage-hours').value) || 0;
+        const rate = parseFloat(row.querySelector('.stage-rate').value) || 0;
+        row.querySelector('.stage-total').value = (hours * rate).toFixed(2);
+    }
+});
+</script>
+{% endblock %}

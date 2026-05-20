@@ -1,0 +1,710 @@
+{% extends 'base.html' %}
+
+{% block title %}ООО «БИТ» — Будущие информационные технологии{% endblock %}
+
+{% block content %}
+<!-- Animated gradient background -->
+<div class="gradient-bg"></div>
+
+<!-- Floating particles -->
+<div class="particles-container">
+    <div class="particle particle-1"></div>
+    <div class="particle particle-2"></div>
+    <div class="particle particle-3"></div>
+    <div class="particle particle-4"></div>
+</div>
+
+<!-- Morphing blobs -->
+<div class="morph-blob morph-blob-1"></div>
+<div class="morph-blob morph-blob-2"></div>
+
+<section id="home" class="hero hero-light">
+    <div class="container">
+        <div class="hero-panel reveal glass-card">
+            <div class="row align-items-center gy-4">
+                <div class="col-lg-6">
+                    <p class="eyebrow">ООО «Будущие информационные технологии»</p>
+                    <h1 class="hero-title-accent">Надёжный IT-партнёр<br>для вашего бизнеса</h1>
+                    <p class="lead">Разрабатываем, внедряем и сопровождаем IT-решения для компаний любого масштаба. Комплексный подход от консалтинга до технической поддержки.</p>
+                    <div class="d-flex flex-wrap gap-3 mt-4">
+                        {% if user.is_authenticated %}
+                            <a class="btn btn-liquid btn-lg magnetic-btn shine-effect" href="#request"><i class="fas fa-paper-plane me-2"></i>Оставить заявку</a>
+                        {% else %}
+                            <a class="btn btn-liquid btn-lg magnetic-btn shine-effect" href="{% url 'accounts:register' %}"><i class="fas fa-paper-plane me-2"></i>Оставить заявку</a>
+                        {% endif %}
+                        <a class="btn btn-outline-secondary btn-lg hover-lift" href="#services"><i class="fas fa-list me-2"></i>Наши услуги</a>
+                    </div>
+                    <div class="hero-badges mt-4">
+                        <span class="hero-badge"><i class="fas fa-shield-alt me-1"></i>Аккредитованная IT-компания</span>
+                        <span class="hero-badge"><i class="fas fa-certificate me-1"></i>В реестре отечественного ПО</span>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-3d-illustration">
+                        <!-- Floating icons around -->
+                        <div class="floating-icons">
+                            <div class="float-icon float-icon-1"><i class="fas fa-server"></i></div>
+                            <div class="float-icon float-icon-2"><i class="fas fa-cloud"></i></div>
+                            <div class="float-icon float-icon-3"><i class="fas fa-shield-alt"></i></div>
+                            <div class="float-icon float-icon-4"><i class="fas fa-code"></i></div>
+                            <div class="float-icon float-icon-5"><i class="fas fa-cogs"></i></div>
+                        </div>
+                        
+                        <!-- Decorative circles -->
+                        <div class="deco-shape deco-circle deco-circle-1"></div>
+                        <div class="deco-shape deco-circle deco-circle-2"></div>
+                        
+                        <!-- Main SVG illustration -->
+                        <div class="hero-scene">
+                            <svg class="hero-main-image" viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Background shape -->
+                                <defs>
+                                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#8d73ff;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#8ea8ff;stop-opacity:1" />
+                                    </linearGradient>
+                                    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#b9a7ff;stop-opacity:0.8" />
+                                        <stop offset="100%" style="stop-color:#9bc0ff;stop-opacity:0.8" />
+                                    </linearGradient>
+                                    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                                        <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#8d73ff" flood-opacity="0.3"/>
+                                    </filter>
+                                </defs>
+                                
+                                <!-- Main laptop/computer shape -->
+                                <g filter="url(#shadow)">
+                                    <!-- Laptop base -->
+                                    <rect x="100" y="220" width="300" height="20" rx="5" fill="#e8e4ff"/>
+                                    <ellipse cx="250" cy="260" rx="170" ry="15" fill="#ddd9ff" opacity="0.6"/>
+                                    
+                                    <!-- Laptop screen -->
+                                    <rect x="115" y="80" width="270" height="150" rx="10" fill="#2d2e3a"/>
+                                    <rect x="125" y="90" width="250" height="130" rx="5" fill="url(#grad1)"/>
+                                    
+                                    <!-- Code lines on screen -->
+                                    <rect x="140" y="105" width="120" height="8" rx="4" fill="rgba(255,255,255,0.9)"/>
+                                    <rect x="140" y="120" width="80" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+                                    <rect x="140" y="135" width="150" height="8" rx="4" fill="rgba(255,255,255,0.7)"/>
+                                    <rect x="140" y="150" width="100" height="8" rx="4" fill="rgba(255,255,255,0.5)"/>
+                                    <rect x="140" y="165" width="130" height="8" rx="4" fill="rgba(255,255,255,0.8)"/>
+                                    <rect x="140" y="180" width="60" height="8" rx="4" fill="rgba(255,255,255,0.4)"/>
+                                    
+                                    <!-- Dashboard charts on right -->
+                                    <rect x="280" y="105" width="80" height="45" rx="5" fill="rgba(255,255,255,0.2)"/>
+                                    <rect x="290" y="160" width="60" height="40" rx="5" fill="rgba(255,255,255,0.15)"/>
+                                    <!-- Bar chart -->
+                                    <rect x="295" y="170" width="8" height="20" rx="2" fill="rgba(255,255,255,0.8)"/>
+                                    <rect x="308" y="165" width="8" height="25" rx="2" fill="rgba(255,255,255,0.6)"/>
+                                    <rect x="321" y="175" width="8" height="15" rx="2" fill="rgba(255,255,255,0.7)"/>
+                                    <rect x="334" y="160" width="8" height="30" rx="2" fill="rgba(255,255,255,0.9)"/>
+                                </g>
+                                
+                                <!-- Floating elements -->
+                                <g class="floating" style="animation-delay: -1s;">
+                                    <circle cx="80" cy="120" r="25" fill="url(#grad2)" opacity="0.8"/>
+                                    <text x="80" y="127" text-anchor="middle" fill="white" font-size="18" font-weight="bold">✓</text>
+                                </g>
+                                
+                                <g class="floating" style="animation-delay: -2s;">
+                                    <circle cx="420" cy="150" r="30" fill="url(#grad1)" opacity="0.7"/>
+                                    <text x="420" y="158" text-anchor="middle" fill="white" font-size="22" font-weight="bold">⚡</text>
+                                </g>
+                                
+                                <g class="floating" style="animation-delay: -0.5s;">
+                                    <rect x="400" y="250" width="50" height="50" rx="10" fill="url(#grad2)" opacity="0.6"/>
+                                    <text x="425" y="283" text-anchor="middle" fill="white" font-size="24">📊</text>
+                                </g>
+                                
+                                <g class="floating" style="animation-delay: -1.5s;">
+                                    <rect x="50" y="200" width="45" height="45" rx="10" fill="url(#grad1)" opacity="0.5"/>
+                                    <text x="72" y="230" text-anchor="middle" fill="white" font-size="20">🔒</text>
+                                </g>
+                                
+                                <!-- Connecting lines -->
+                                <path d="M95 180 Q 120 200 140 180" stroke="url(#grad2)" stroke-width="2" fill="none" opacity="0.5"/>
+                                <path d="M400 195 Q 380 210 360 200" stroke="url(#grad1)" stroke-width="2" fill="none" opacity="0.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-wrap">
+    <div class="container">
+        <div class="stats reveal glass-card animated-border">
+            <div class="row text-center g-3">
+                <div class="col-md-3 col-6 stat-item">
+                    <span class="stat-number glow" data-count="4">0</span>
+                    <span>года на рынке</span>
+                </div>
+                <div class="col-md-3 col-6 stat-item">
+                    <span class="stat-number glow" data-count="{{ projects_completed }}">0</span>
+                    <span>реализованных проектов</span>
+                </div>
+                <div class="col-md-3 col-6 stat-item">
+                    <span class="stat-number glow" data-count="{{ happy_clients }}">0</span>
+                    <span>довольных клиентов</span>
+                </div>
+                <div class="col-md-3 col-6 stat-item">
+                    <span class="stat-number glow" data-count="13">0</span>
+                    <span>направлений работы</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="section section-soft parallax-section">
+    <div class="container py-5">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-7 reveal">
+                <p class="eyebrow mb-2">О компании</p>
+                <h2 class="animated-underline">ООО «Будущие информационные технологии»</h2>
+                <p class="lead">Мы — команда профессионалов, которая помогает бизнесу расти с помощью современных IT-решений.</p>
+                <p>Компания зарегистрирована 06.10.2022 года в Республике Татарстан. Основной профиль деятельности — разработка программного обеспечения, IT-консалтинг, техническая поддержка и аутсорсинг IT-инфраструктуры.</p>
+                <p>Мы работаем как с крупными корпоративными заказчиками, так и с малым и средним бизнесом, предлагая индивидуальный подход к каждому проекту.</p>
+                <div class="about-list mt-4">
+                    <p><i class="fas fa-check-circle me-2"></i>Официально зарегистрированная организация (ОГРН, ИНН)</p>
+                    <p><i class="fas fa-check-circle me-2"></i>Основной ОКВЭД: 62.09 — деятельность в области IT</p>
+                    <p><i class="fas fa-check-circle me-2"></i>13 направлений деятельности по ЕГРЮЛ</p>
+                    <p><i class="fas fa-check-circle me-2"></i>Работа по договору с гарантией качества</p>
+                </div>
+            </div>
+            <div class="col-lg-5 reveal">
+                <div class="service-card enhanced glass-card hover-lift">
+                    <div class="service-icon"><i class="fas fa-building"></i></div>
+                    <h4>Реквизиты компании</h4>
+                    <p class="mb-2"><strong>Полное наименование:</strong><br>ООО «Будущие информационные технологии»</p>
+                    <p class="mb-2"><strong>Краткое наименование:</strong> ООО «БИТ»</p>
+                    <p class="mb-2"><strong>Юридический адрес:</strong><br>Республика Татарстан, Бугульминский р-н, г. Бугульма, ул. Газинура Гафиатуллина, д. 16, кв. 44</p>
+                    <p class="mb-0"><strong>Генеральный директор:</strong><br>Шакирзянов Ильдар Мустакимович</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Почему мы</p>
+            <h2 class="animated-underline">Преимущества работы с нами</h2>
+        </div>
+        <div class="row g-4 stagger-grid cards-grid-animated">
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-handshake"></i></div>
+                    <h4>Индивидуальный подход</h4>
+                    <p>Анализируем потребности каждого клиента и предлагаем решения, которые подходят именно вашему бизнесу.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-clock"></i></div>
+                    <h4>Соблюдение сроков</h4>
+                    <p>Фиксируем сроки в договоре и несём ответственность за их выполнение. Прозрачная отчётность на каждом этапе.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-ruble-sign"></i></div>
+                    <h4>Честные цены</h4>
+                    <p>Работаем без скрытых платежей. Стоимость согласовывается до начала работ и фиксируется в договоре.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-headset"></i></div>
+                    <h4>Техническая поддержка</h4>
+                    <p>Оказываем поддержку после сдачи проекта. Быстро реагируем на обращения и решаем возникающие вопросы.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-file-contract"></i></div>
+                    <h4>Официальное оформление</h4>
+                    <p>Работаем по договору с полным пакетом закрывающих документов. Подходит для бухгалтерии и тендеров.</p>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 reveal">
+                <div class="advantage-card glass-card hover-lift shine-effect">
+                    <div class="advantage-icon"><i class="fas fa-user-tie"></i></div>
+                    <h4>Опытная команда</h4>
+                    <p>В штате — сертифицированные специалисты с опытом работы в крупных IT-проектах.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="section section-soft">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Направления деятельности</p>
+            <h2 class="animated-underline">Наши услуги</h2>
+            <p class="lead">Полный спектр IT-услуг для развития вашего бизнеса</p>
+        </div>
+        <div class="row g-4 stagger-grid cards-grid-animated">
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-server"></i></div>
+                    <h4>IT-аутсорсинг</h4>
+                    <p>Передайте обслуживание IT-инфраструктуры профессионалам. Мониторинг 24/7, быстрое решение инцидентов, регулярное обслуживание оборудования.</p>
+                    <ul class="service-list">
+                        <li>Администрирование серверов</li>
+                        <li>Поддержка рабочих мест</li>
+                        <li>Резервное копирование</li>
+                    </ul>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-cogs"></i></div>
+                    <h4>Внедрение ПО</h4>
+                    <p>Настройка и адаптация корпоративных систем под бизнес-процессы вашей компании. Интеграция с существующими решениями.</p>
+                    <ul class="service-list">
+                        <li>1С:Предприятие</li>
+                        <li>CRM-системы</li>
+                        <li>Системы документооборота</li>
+                    </ul>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-lightbulb"></i></div>
+                    <h4>IT-консалтинг</h4>
+                    <p>Аудит текущей IT-инфраструктуры, разработка стратегии развития, оптимизация затрат на информационные технологии.</p>
+                    <ul class="service-list">
+                        <li>IT-аудит</li>
+                        <li>Разработка ТЗ</li>
+                        <li>Подбор оборудования</li>
+                    </ul>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-code"></i></div>
+                    <h4>Разработка ПО</h4>
+                    <p>Создание веб-приложений, мобильных приложений, корпоративных порталов и автоматизированных систем под ключ.</p>
+                    <ul class="service-list">
+                        <li>Веб-разработка</li>
+                        <li>Мобильные приложения</li>
+                        <li>Автоматизация процессов</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+        <div class="row g-4 mt-2 stagger-grid">
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h4>Информационная безопасность</h4>
+                    <p>Защита данных, настройка систем безопасности, аудит уязвимостей и соответствие требованиям законодательства.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-network-wired"></i></div>
+                    <h4>Сетевые решения</h4>
+                    <p>Проектирование и монтаж локальных сетей, настройка Wi-Fi, организация VPN и удалённого доступа.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-cloud"></i></div>
+                    <h4>Облачные сервисы</h4>
+                    <p>Миграция в облако, настройка облачной инфраструктуры, интеграция с популярными облачными платформами.</p>
+                </article>
+            </div>
+            <div class="col-md-6 col-lg-3 reveal">
+                <article class="service-card enhanced h-100 tilt-card shine-effect">
+                    <div class="service-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <h4>Обучение персонала</h4>
+                    <p>Проводим обучение сотрудников работе с новыми системами и программным обеспечением.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Как мы работаем</p>
+            <h2 class="animated-underline">Этапы сотрудничества</h2>
+        </div>
+        <div class="process-timeline stagger-grid">
+            <div class="process-step enhanced reveal">
+                <div class="process-number">01</div>
+                <div class="process-content">
+                    <h4>Заявка и консультация</h4>
+                    <p>Вы оставляете заявку на сайте или звоните нам. Проводим бесплатную консультацию, выясняем потребности и задачи.</p>
+                </div>
+            </div>
+            <div class="process-step enhanced reveal">
+                <div class="process-number">02</div>
+                <div class="process-content">
+                    <h4>Анализ и коммерческое предложение</h4>
+                    <p>Анализируем вашу ситуацию, готовим детальное коммерческое предложение с фиксированными сроками и стоимостью.</p>
+                </div>
+            </div>
+            <div class="process-step enhanced reveal">
+                <div class="process-number">03</div>
+                <div class="process-content">
+                    <h4>Заключение договора</h4>
+                    <p>Подписываем договор с чётким техническим заданием, графиком работ и условиями оплаты.</p>
+                </div>
+            </div>
+            <div class="process-step enhanced reveal">
+                <div class="process-number">04</div>
+                <div class="process-content">
+                    <h4>Выполнение работ</h4>
+                    <p>Реализуем проект с регулярной отчётностью. Вы всегда в курсе текущего статуса и можете вносить корректировки.</p>
+                </div>
+            </div>
+            <div class="process-step enhanced reveal">
+                <div class="process-number">05</div>
+                <div class="process-content">
+                    <h4>Сдача и поддержка</h4>
+                    <p>Сдаём проект, предоставляем документацию и обучение. Оказываем гарантийную и постгарантийную поддержку.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="cases" class="section section-soft">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Наш опыт</p>
+            <h2 class="animated-underline">Реализованные проекты</h2>
+        </div>
+        <div class="case-grid stagger-grid">
+            <article class="case-card case-card-lg reveal hover-lift">
+                <div class="case-tag">Разработка</div>
+                <h4>Корпоративный портал для производственной компании</h4>
+                <p>Разработали внутренний портал для автоматизации заявок, учёта задач и формирования отчётности. Интеграция с 1С и системой учёта рабочего времени.</p>
+                <div class="case-result"><i class="fas fa-chart-line me-2"></i>Сокращение времени на согласование на 40%</div>
+            </article>
+            <article class="case-card reveal hover-lift glass-card">
+                <div class="case-tag">Аутсорсинг</div>
+                <h4>IT-поддержка сети филиалов</h4>
+                <p>Взяли на обслуживание IT-инфраструктуру компании с 12 филиалами. Организовали единую службу поддержки и мониторинг.</p>
+            </article>
+            <article class="case-card reveal hover-lift glass-card">
+                <div class="case-tag">Внедрение</div>
+                <h4>Миграция в облако</h4>
+                <p>Перенесли серверную инфраструктуру клиента в облако. Настроили резервное копирование и отказоустойчивость.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Гарантии</p>
+            <h2 class="animated-underline">Почему нам доверяют</h2>
+        </div>
+        <div class="row g-4 stagger-grid cards-grid-animated">
+            <div class="col-lg-4 reveal">
+                <div class="guarantee-card glass-card hover-lift shine-effect">
+                    <div class="guarantee-icon"><i class="fas fa-file-signature"></i></div>
+                    <h4>Договор и документы</h4>
+                    <p>Работаем официально по договору. Предоставляем полный пакет закрывающих документов: акты, счета-фактуры, накладные.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 reveal">
+                <div class="guarantee-card glass-card hover-lift shine-effect">
+                    <div class="guarantee-icon"><i class="fas fa-undo"></i></div>
+                    <h4>Гарантийный период</h4>
+                    <p>На все работы предоставляем гарантию. Бесплатно исправляем недочёты в течение гарантийного срока.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 reveal">
+                <div class="guarantee-card glass-card hover-lift shine-effect">
+                    <div class="guarantee-icon"><i class="fas fa-lock"></i></div>
+                    <h4>Конфиденциальность</h4>
+                    <p>Подписываем NDA. Гарантируем сохранность вашей коммерческой информации и персональных данных.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="reviews" class="section section-soft">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">Обратная связь</p>
+            <h2>Отзывы клиентов</h2>
+        </div>
+        <div class="row g-4 stagger-grid">
+            <div class="col-md-4 reveal">
+                <blockquote class="review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                    <p>«Обратились за настройкой 1С и интеграцией с сайтом. Всё сделали в срок, подробно объяснили, как пользоваться. Рекомендуем!»</p>
+                    <div class="review-author">
+                        <strong>Анна Петрова</strong>
+                        <span>ООО «ТоргСервис»</span>
+                    </div>
+                </blockquote>
+            </div>
+            <div class="col-md-4 reveal">
+                <blockquote class="review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                    </div>
+                    <p>«Передали им IT-поддержку офиса. За полгода ни одного серьёзного сбоя. Оперативно реагируют на заявки, всегда на связи.»</p>
+                    <div class="review-author">
+                        <strong>Михаил Сидоров</strong>
+                        <span>ИП Сидоров М.В.</span>
+                    </div>
+                </blockquote>
+            </div>
+            <div class="col-md-4 reveal">
+                <blockquote class="review-card">
+                    <div class="review-stars">
+                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p>«Разработали для нас корпоративный портал. Учли все пожелания, помогли с обучением сотрудников. Работаем уже год — всё отлично.»</p>
+                    <div class="review-author">
+                        <strong>Елена Козлова</strong>
+                        <span>ООО «ПромТех»</span>
+                    </div>
+                </blockquote>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container py-3">
+        <div class="text-center mb-5 reveal">
+            <p class="eyebrow mb-2">FAQ</p>
+            <h2>Часто задаваемые вопросы</h2>
+        </div>
+        <div class="faq-list stagger-grid">
+            <div class="faq-item reveal">
+                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faq1">
+                    <span>Как быстро вы можете приступить к работе?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapse" id="faq1">
+                    <div class="faq-answer">Обычно мы можем начать работу в течение 1-3 рабочих дней после согласования условий и подписания договора. Для срочных задач возможен более быстрый старт.</div>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faq2">
+                    <span>Работаете ли вы с клиентами из других регионов?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapse" id="faq2">
+                    <div class="faq-answer">Да, мы работаем с клиентами по всей России. Большинство задач можно решить удалённо. При необходимости выезжаем на объект или организуем работу через партнёрскую сеть.</div>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faq3">
+                    <span>Какие формы оплаты вы принимаете?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapse" id="faq3">
+                    <div class="faq-answer">Работаем по безналичному расчёту с юридическими лицами и ИП. Возможна поэтапная оплата для крупных проектов. Предоставляем все необходимые закрывающие документы.</div>
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" data-bs-toggle="collapse" data-bs-target="#faq4">
+                    <span>Предоставляете ли вы гарантию на выполненные работы?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="collapse" id="faq4">
+                    <div class="faq-answer">Да, на все виды работ предоставляется гарантия. Срок гарантии зависит от типа услуги и фиксируется в договоре. В течение гарантийного периода бесплатно устраняем выявленные недочёты.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="request" class="cta-section">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 reveal">
+                <div class="text-center mb-4 text-white">
+                    <h2 class="text-white">Готовы обсудить ваш проект?</h2>
+                    <p class="lead mb-0">Оставьте заявку — мы свяжемся с вами в течение рабочего дня и бесплатно проконсультируем по вашему вопросу.</p>
+                </div>
+                <div class="request-form">
+                    {% if user.is_authenticated %}
+                        <form>
+                            <div class="row g-3">
+                                <div class="col-md-6"><input type="text" class="form-control" placeholder="Ваше имя *" required></div>
+                                <div class="col-md-6"><input type="text" class="form-control" placeholder="Название компании"></div>
+                                <div class="col-md-6"><input type="email" class="form-control" placeholder="Email *" required></div>
+                                <div class="col-md-6"><input type="tel" class="form-control" placeholder="Телефон *" required></div>
+                                <div class="col-12">
+                                    <select class="form-control">
+                                        <option value="">Выберите интересующую услугу</option>
+                                        <option>IT-аутсорсинг</option>
+                                        <option>Внедрение ПО</option>
+                                        <option>IT-консалтинг</option>
+                                        <option>Разработка ПО</option>
+                                        <option>Информационная безопасность</option>
+                                        <option>Другое</option>
+                                    </select>
+                                </div>
+                                <div class="col-12"><textarea class="form-control" rows="4" placeholder="Опишите вашу задачу или вопрос *" required></textarea></div>
+                                <div class="col-12">
+                                    <button type="button" class="btn btn-liquid w-100 btn-lg"><i class="fas fa-paper-plane me-2"></i>Отправить заявку</button>
+                                </div>
+                                <div class="col-12 text-center">
+                                    <small class="text-muted">Нажимая кнопку, вы соглашаетесь с политикой конфиденциальности</small>
+                                </div>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <div class="mb-4">
+                                <i class="fas fa-user-lock fa-3x text-muted mb-3"></i>
+                                <p class="mb-2">Для отправки заявки необходимо зарегистрироваться или войти в аккаунт.</p>
+                                <p class="text-muted small">Регистрация займёт меньше минуты</p>
+                            </div>
+                            <a href="{% url 'accounts:register' %}" class="btn btn-liquid btn-lg me-2"><i class="fas fa-user-plus me-2"></i>Зарегистрироваться</a>
+                            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg"><i class="fas fa-sign-in-alt me-2"></i>Войти</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section section-soft">
+    <div class="container py-3">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-6 reveal">
+                <p class="eyebrow mb-2">Связаться с нами</p>
+                <h2>Контактная информация</h2>
+                <div class="contact-list mt-4">
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>Адрес</strong>
+                            <p class="mb-0">Республика Татарстан, Бугульминский район,<br>г. Бугульма, ул. Газинура Гафиатуллина, д. 16</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <strong>Телефон</strong>
+                            <p class="mb-0"><a href="tel:+79991234567">+7 (999) 123-45-67</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <strong>Email</strong>
+                            <p class="mb-0"><a href="mailto:info@bit-company.ru">info@bit-company.ru</a></p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <strong>Режим работы</strong>
+                            <p class="mb-0">Пн-Пт: 9:00 — 18:00<br>Сб-Вс: выходной</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 reveal">
+                <div id="yandex-map" class="map-container"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer id="contact">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <h4 class="mb-3"><i class="fas fa-cube me-2"></i>ООО «БИТ»</h4>
+                <p>Будущие информационные технологии — надёжный IT-партнёр для вашего бизнеса. Разработка, внедрение и поддержка IT-решений.</p>
+                <div class="social-links mt-3">
+                    <a href="#" title="ВКонтакте"><i class="fab fa-vk"></i></a>
+                    <a href="#" title="Telegram"><i class="fab fa-telegram"></i></a>
+                    <a href="#" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 mb-4">
+                <h5 class="mb-3">Услуги</h5>
+                <p><a href="#services">IT-аутсорсинг</a></p>
+                <p><a href="#services">Внедрение ПО</a></p>
+                <p><a href="#services">Консалтинг</a></p>
+                <p><a href="#services">Разработка</a></p>
+            </div>
+            <div class="col-lg-2 mb-4">
+                <h5 class="mb-3">Компания</h5>
+                <p><a href="#about">О нас</a></p>
+                <p><a href="#cases">Проекты</a></p>
+                <p><a href="#reviews">Отзывы</a></p>
+                <p><a href="#request">Контакты</a></p>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <h5 class="mb-3">Реквизиты</h5>
+                <p class="small mb-1">ООО «Будущие информационные технологии»</p>
+                <p class="small mb-1">ИНН: 1234567890 / КПП: 123456789</p>
+                <p class="small mb-1">ОГРН: 1234567890123</p>
+                <p class="small mb-0">Республика Татарстан, г. Бугульма</p>
+            </div>
+        </div>
+        <hr class="footer-divider">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="mb-0 small">© {{ current_year }} ООО «Будущие информационные технологии». Все права защищены.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-0 small"><a href="{% url 'core:privacy' %}">Политика конфиденциальности</a> · <a href="{% url 'core:terms' %}">Пользовательское соглашение</a></p>
+            </div>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://api-maps.yandex.ru/2.1/?apikey=&lang=ru_RU"></script>
+<script>
+    ymaps.ready(function() {
+        // Координаты: г. Бугульма, ул. Газинура Гафиатуллина, д. 16
+        var coordinates = [54.5393, 52.7892];
+        
+        var map = new ymaps.Map('yandex-map', {
+            center: coordinates,
+            zoom: 16,
+            controls: ['zoomControl', 'fullscreenControl']
+        });
+        
+        // Создаём метку
+        var placemark = new ymaps.Placemark(coordinates, {
+            balloonContentHeader: '<strong>ООО «БИТ»</strong>',
+            balloonContentBody: 'Республика Татарстан, г. Бугульма,<br>ул. Газинура Гафиатуллина, д. 16',
+            balloonContentFooter: '<a href="tel:+79991234567">+7 (999) 123-45-67</a>',
+            hintContent: 'ООО «БИТ» — Будущие информационные технологии'
+        }, {
+            preset: 'islands#violetDotIcon',
+            iconColor: '#7c5ce9'
+        });
+        
+        map.geoObjects.add(placemark);
+        
+        // Отключаем скролл колёсиком мыши (чтобы не мешало прокрутке страницы)
+        map.behaviors.disable('scrollZoom');
+        
+        // Открываем балун по умолчанию
+        placemark.balloon.open();
+    });
+</script>
+{% endblock %}

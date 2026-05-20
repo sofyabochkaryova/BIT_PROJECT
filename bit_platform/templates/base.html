@@ -1,0 +1,157 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ООО «БИТ»{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- SN Pro Font by Supernotes -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/nickshanks/sn-pro@latest/css/SN%20Pro.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="bg-blob blob-1" data-speed="0.08"></div>
+    <div class="bg-blob blob-2" data-speed="0.12"></div>
+
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top bit-navbar">
+        <div class="container">
+            <div class="nav-shell w-100 d-flex align-items-center justify-content-between">
+                <a class="navbar-brand fw-bold" href="{% url 'core:home' %}"><i class="fas fa-cube me-2"></i>ООО «БИТ»</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Переключить навигацию">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                    {% if user.is_authenticated and user_role %}
+                        {# ── Навигация для залогиненного пользователя ── #}
+
+                        {# Общие ссылки на сайт #}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}"><i class="fas fa-home me-1"></i>Главная</a></li>
+
+                        {% if user_role == 'client' %}
+                            {# ── Клиент ── #}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'requests_app:my_requests' %}"><i class="fas fa-clipboard-list me-1"></i>Мои заявки</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'requests_app:create_request' %}"><i class="fas fa-plus-circle me-1"></i>Новая заявка</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'proposals:list' %}"><i class="fas fa-file-signature me-1"></i>КП</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'contracts:list' %}"><i class="fas fa-file-contract me-1"></i>Договоры</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-1"></i>Документы</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'clients:my_company' %}"><i class="fas fa-building me-1"></i>Реквизиты</a></li>
+
+                        {% elif user_role == 'analyst' %}
+                            {# ── Аналитик ── #}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'requests_app:all_requests' %}"><i class="fas fa-clipboard-list me-1"></i>Заявки</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'proposals:list' %}"><i class="fas fa-file-signature me-1"></i>КП</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'contracts:list' %}"><i class="fas fa-file-contract me-1"></i>Договоры</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-1"></i>Документы</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'projects:my_projects' %}"><i class="fas fa-project-diagram me-1"></i>Проекты</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'time_tracking:my_reports' %}"><i class="fas fa-file-alt me-1"></i>Отчёты</a></li>
+
+                        {% elif user_role == 'executor' %}
+                            {# ── Исполнитель ── #}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'tasks:my_tasks' %}"><i class="fas fa-tasks me-1"></i>Мои задачи</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'projects:my_projects' %}"><i class="fas fa-project-diagram me-1"></i>Проекты</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'time_tracking:my_reports' %}"><i class="fas fa-file-alt me-1"></i>Отчёты</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-1"></i>Документы</a></li>
+
+                        {% elif user_role == 'admin' %}
+                            {# ── Администратор ── #}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'requests_app:all_requests' %}"><i class="fas fa-clipboard-list me-1"></i>Заявки</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'projects:my_projects' %}"><i class="fas fa-project-diagram me-1"></i>Проекты</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-1"></i>Документы</a></li>
+                        {% endif %}
+
+                        {# Общее для всех ролей: уведомления и кабинет #}
+                        <li class="nav-item">
+                            <a class="nav-link position-relative" href="{% url 'notifications:list' %}" title="Уведомления">
+                                <i class="fas fa-bell"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'chat:list' %}" title="Сообщения">
+                                <i class="fas fa-comments"></i>
+                            </a>
+                        </li>
+
+                        {# Кнопка «Мой кабинет» + меню пользователя #}
+                        <li class="nav-item dropdown ms-lg-2">
+                            <a class="btn btn-sm btn-liquid dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="" class="rounded-circle" style="width:22px;height:22px;object-fit:cover">
+                                {% else %}
+                                    <i class="fas fa-user-circle"></i>
+                                {% endif %}
+                                {{ user.get_full_name|default:user.username|truncatechars:15 }}
+                                <span class="badge bg-white text-dark rounded-pill" style="font-size:.65rem">{{ user_role_display }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+                                <li class="px-3 py-2 border-bottom">
+                                    <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:dashboard' %}">
+                                    <i class="fas fa-tachometer-alt me-2 text-primary"></i>Мой кабинет
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                                    <i class="fas fa-user-cog me-2 text-secondary"></i>Настройки профиля
+                                </a></li>
+                                {% if user_role == 'admin' %}
+                                <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                                    <i class="fas fa-shield-alt me-2 text-warning"></i>Админ-панель
+                                </a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+
+                    {% elif user.is_authenticated %}
+                        {# Залогинен, но профиль не создан #}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}">Главная</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}">Дашборд</a></li>
+                        <li class="nav-item ms-lg-2"><span class="user-tag">{{ user.username }}</span></li>
+                        <li class="nav-item ms-lg-2">
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Выйти</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        {# ── Гость ── #}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#home">Главная</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#about">О компании</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#services">Услуги</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#cases">Кейсы</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}#contact">Контакты</a></li>
+                        <li class="nav-item ms-lg-2"><a href="{% url 'login' %}" class="btn btn-sm btn-outline-secondary">Войти</a></li>
+                        <li class="nav-item ms-lg-2"><a href="{% url 'accounts:register' %}" class="btn btn-sm btn-liquid">Регистрация</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-enter">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/site.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

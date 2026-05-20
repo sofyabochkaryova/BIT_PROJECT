@@ -1,0 +1,87 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Новые заявки — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:all_requests' %}">
+        <i class="fas fa-inbox me-2"></i>Все заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'requests_app:new_requests' %}">
+        <i class="fas fa-bell me-2"></i>Новые заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:my_analysis' %}">
+        <i class="fas fa-tasks me-2"></i>Мои заявки
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Новые заявки{% endblock %}
+
+{% block dashboard_content %}
+<div class="card glass-card">
+    <div class="card-body p-0">
+        {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Название</th>
+                            <th>Клиент / Компания</th>
+                            <th>Услуга</th>
+                            <th>Приоритет</th>
+                            <th>Дата</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td><strong>#{{ req.pk }}</strong></td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' req.pk %}" class="text-decoration-none fw-medium">
+                                    {{ req.title|truncatechars:35 }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ req.client.get_full_name|default:req.client.username }}
+                                {% if req.company_name %}
+                                    <br><small class="text-muted">{{ req.company_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge bg-{% if req.priority == 'urgent' %}danger{% elif req.priority == 'high' %}warning{% else %}secondary{% endif %}">
+                                    {{ req.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' req.pk %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-hand-paper me-1"></i>Взять
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted mb-0">Все заявки обработаны!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

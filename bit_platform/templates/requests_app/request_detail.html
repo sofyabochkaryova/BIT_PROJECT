@@ -1,0 +1,605 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Заявка {{ request_obj.number|default:request_obj.pk }} — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+{% if user.profile.is_client %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:client_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:my_requests' %}">
+        <i class="fas fa-clipboard-list me-2"></i>Мои заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:create_request' %}">
+        <i class="fas fa-plus-circle me-2"></i>Новая заявка
+    </a>
+</li>
+{% elif user.profile.is_analyst or user.profile.is_admin %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:all_requests' %}">
+        <i class="fas fa-inbox me-2"></i>Все заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:my_analysis' %}">
+        <i class="fas fa-tasks me-2"></i>Мои заявки
+    </a>
+</li>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_title %}Заявка {{ request_obj.number|default:request_obj.pk }}{% endblock %}
+
+{% block dashboard_actions %}
+{% if user == request_obj.client and request_obj.status == 'IN_ANALYSIS' or request_obj.status == 'ESTIMATION' %}
+{% if user == request_obj.client %}
+<a href="{% url 'requests_app:edit_request' request_obj.pk %}" class="btn btn-outline-warning btn-sm ms-2">
+    <i class="fas fa-edit me-1"></i>Редактировать
+</a>
+{% endif %}
+{% endif %}
+{% if user.profile.role == 'analyst' or user.profile.role == 'admin' %}
+<a href="{% url 'proposals:create' request_obj.pk %}" class="btn btn-outline-primary btn-sm ms-2">
+    <i class="fas fa-file-signature me-1"></i>КП
+</a>
+<a href="{% url 'contracts:create' request_obj.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
+    <i class="fas fa-file-contract me-1"></i>Договор
+</a>
+<a href="{% url 'documents:generate_bundle' request_obj.pk %}" class="btn btn-outline-success btn-sm ms-2">
+    <i class="fas fa-folder-plus me-1"></i>Акт + счёт
+</a>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+{# ── Визуальный пайплайн ── #}
+<div class="card glass-card mb-4">
+    <div class="card-body py-3 px-2">
+        <div class="d-flex align-items-center flex-nowrap overflow-auto pb-1" style="gap:0">
+            {% for stage in pipeline_stages %}
+            <div class="text-center flex-shrink-0" style="min-width:62px">
+                 <div class="mx-auto mb-1 rounded-circle {% if stage.is_current %}bg-primary border border-2 border-white shadow{% elif stage.passed %}bg-success{% else %}bg-secondary opacity-25{% endif %}"
+                     style="width:{% if stage.is_current %}18{% else %}12{% endif %}px;height:{% if stage.is_current %}18{% else %}12{% endif %}px"></div>
+                 <small class="d-block lh-sm {% if stage.is_current %}fw-bold text-primary{% elif stage.passed %}text-success{% else %}text-muted{% endif %}"
+                       style="font-size:.65rem">{{ stage.label }}</small>
+            </div>
+            {% if not forloop.last %}
+            <div class="flex-shrink-0" style="width:18px;height:2px;background:{% if stage.passed %}#198754{% else %}#dee2e6{% endif %};margin-top:-14px"></div>
+            {% endif %}
+            {% endfor %}
+
+            {% if request_obj.status == 'REJECTED' or request_obj.status == 'CANCELLED' %}
+            <div class="text-center flex-shrink-0 ms-3" style="min-width:62px">
+                <div class="mx-auto mb-1 rounded-circle bg-danger" style="width:18px;height:18px"></div>
+                <small class="d-block lh-sm fw-bold text-danger" style="font-size:.65rem">{{ request_obj.get_status_display }}</small>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-3 px-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">Прогресс выполнения</small>
+                <small class="fw-semibold text-primary">{{ pipeline_progress_pct }}%</small>
+            </div>
+            <div class="progress" style="height: 8px; border-radius: 999px; background: #e9edf5;">
+                <div class="progress-bar" role="progressbar"
+                     style="width: {{ pipeline_progress_pct }}%; background: linear-gradient(90deg, #4f8cff, #36c48f);"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    {# ── Основная информация ── #}
+    <div class="col-lg-8">
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ request_obj.title }}</h5>
+                <span class="badge bg-{{ request_obj.status_color }} fs-6">
+                    {{ request_obj.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Описание задачи</h6>
+                    <p class="mb-0">{{ request_obj.description|linebreaks }}</p>
+                </div>
+
+                <hr>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">Номер заявки</small>
+                        <p class="mb-0 fw-medium">{{ request_obj.number|default:"—" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Тип услуги</small>
+                        <p class="mb-0 fw-medium">{{ request_obj.get_service_type_display }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Приоритет</small>
+                        <p class="mb-0">
+                            <span class="badge bg-{% if request_obj.priority == 'low' %}secondary{% elif request_obj.priority == 'medium' %}info{% elif request_obj.priority == 'high' %}warning{% else %}danger{% endif %}">
+                                {{ request_obj.get_priority_display }}
+                            </span>
+                        </p>
+                    </div>
+                    {% if request_obj.budget_from or request_obj.budget_to %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Бюджет</small>
+                        <p class="mb-0 fw-medium">
+                            {% if request_obj.budget_from %}{{ request_obj.budget_from|floatformat:0 }} ₽{% endif %}
+                            {% if request_obj.budget_from and request_obj.budget_to %} — {% endif %}
+                            {% if request_obj.budget_to %}{{ request_obj.budget_to|floatformat:0 }} ₽{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% if request_obj.deadline %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Желаемый срок</small>
+                        <p class="mb-0 fw-medium">{{ request_obj.deadline|date:"d.m.Y" }}</p>
+                    </div>
+                    {% endif %}
+                    {% if request_obj.sla_due_at %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Срок обработки</small>
+                        <p class="mb-0 fw-medium">{{ request_obj.sla_due_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+
+            </div>
+        </div>
+
+        {# ── Вложения клиента ── #}
+        {% if request_obj.attachments.all %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-paperclip me-2"></i>Вложения клиента</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for att in request_obj.attachments.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <i class="fas fa-file me-2 text-muted"></i>
+                            <span>{{ att.filename|default:att.file.name }}</span>
+                            {% if att.uploaded_by %}
+                            <small class="text-muted ms-2">— {{ att.uploaded_by.get_full_name }}</small>
+                            {% endif %}
+                        </div>
+                        <a href="{{ att.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-download me-1"></i>Скачать
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Квалификация заявки (Этап 1) ── #}
+        {% if show_stage1 and user.profile.is_analyst or user.profile.is_admin %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Этап 1: Квалификация</h5>
+                {% if qualification_valid %}
+                <span class="badge bg-success"><i class="fas fa-check me-1"></i>Пройдена</span>
+                {% else %}
+                <span class="badge bg-warning text-dark"><i class="fas fa-exclamation-triangle me-1"></i>Замечания</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if not qualification_valid %}
+                <div class="alert alert-warning mb-3">
+                    <ul class="mb-0 ps-3">
+                        {% for issue in qualification_issues %}
+                        <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {# Форма запроса уточнений #}
+                <div class="mt-2">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="clarification">
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold small">Запросить уточнения у клиента</label>
+                            <textarea class="form-control form-control-sm" name="clarification_text" rows="3" placeholder="Какие вопросы задать клиенту?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-question-circle me-1"></i>Отправить вопросы
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# ── Предварительная оценка (Этап 2) ── #}
+        {% if show_stage2 and stages_estimate %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Этап 2: Оценка и КП</h5>
+                <div>
+                    {% if savings_pct %}
+                    <span class="badge bg-success me-1"><i class="fas fa-piggy-bank me-1"></i>-{{ savings_pct }}%</span>
+                    {% endif %}
+                    <span class="badge bg-info">{{ estimate_total|floatformat:0 }} ₽</span>
+                </div>
+            </div>
+            {% if savings_pct %}
+            {% endif %}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:5%">#</th>
+                                <th style="width:40%">Этап</th>
+                                <th class="text-center" style="width:15%">Часы</th>
+                                <th class="text-end" style="width:15%">Ставка</th>
+                                <th class="text-end" style="width:15%">Итого</th>
+                                {% if team_suggestions %}<th style="width:10%">Исп.</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stage in stages_estimate %}
+                            <tr>
+                                <td class="text-muted">{{ stage.order }}</td>
+                                <td>
+                                    <span class="fw-medium">{{ stage.name }}</span>
+                                    {% if stage.description %}<br><small class="text-muted">{{ stage.description }}</small>{% endif %}
+                                </td>
+                                <td class="text-center">{{ stage.hours }}</td>
+                                <td class="text-end">{{ stage.unit_price|floatformat:0 }} ₽</td>
+                                <td class="text-end fw-medium">{{ stage.total|floatformat:0 }} ₽</td>
+                                {% if team_suggestions %}
+                                <td>
+                                    {% for hint in team_suggestions %}
+                                    {% if hint.order == stage.order and hint.recommended %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary" title="Загрузка: {{ hint.recommended.workload_hours|floatformat:0 }} ч">
+                                        {{ hint.recommended.user.get_full_name|default:hint.recommended.user.username|truncatechars:12 }}
+                                    </span>
+                                    {% endif %}
+                                    {% endfor %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="{% if team_suggestions %}4{% else %}3{% endif %}" class="text-end fw-bold">Итого:</td>
+                                <td class="text-end fw-bold">{{ estimate_total|floatformat:0 }} ₽</td>
+                                {% if team_suggestions %}<td></td>{% endif %}
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body pt-2 pb-3">
+                    <a href="{% url 'proposals:create' request_obj.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-signature me-1"></i>Создать КП на основе оценки
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        {# ── Комментарии ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Комментарии</h5>
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                <div class="comments-list mb-4">
+                    {% for comment in comments %}
+                    <div class="comment-item mb-3 {% if comment.is_internal %}bg-warning bg-opacity-10 p-3 rounded{% endif %}">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0">{{ comment.text|linebreaks }}</p>
+                        {% if comment.is_internal %}
+                        <small class="text-warning"><i class="fas fa-lock me-1"></i>Внутренний комментарий</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-4">Комментариев пока нет</p>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="comment">
+                    {{ comment_form.text }}
+                    {% if can_edit_status %}
+                    <div class="form-check mt-2">
+                        {{ comment_form.is_internal }}
+                        <label class="form-check-label" for="id_is_internal">
+                            Внутренний комментарий (не видно клиенту)
+                        </label>
+                    </div>
+                    {% endif %}
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Отправить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {# ── История изменений статусов ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>История изменений</h5>
+                <span class="badge bg-secondary">{{ status_history|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for item in status_history %}
+                <div class="d-flex justify-content-between align-items-start px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <span class="badge bg-secondary bg-opacity-25 text-dark me-1">{{ item.get_old_display }}</span>
+                        <i class="fas fa-arrow-right text-muted mx-1" style="font-size:.7rem"></i>
+                        <span class="badge bg-primary bg-opacity-75">{{ item.get_new_display }}</span>
+                        {% if item.comment %}
+                        <div class="small text-muted mt-1">{{ item.comment }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="text-end flex-shrink-0 ms-2">
+                        <div class="small text-muted">{{ item.changed_at|date:"d.m.Y H:i" }}</div>
+                        <div class="small">{{ item.changed_by.get_full_name|default:item.changed_by.username|default:'Система' }}</div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3 mb-0">История пока пуста</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# ── Связанные КП ── #}
+        {% if related_proposals %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-signature me-2"></i>Коммерческие предложения</h5>
+                <span class="badge bg-secondary">{{ related_proposals|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for p in related_proposals %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <a href="{% url 'proposals:detail' p.pk %}" class="text-decoration-none fw-medium">{{ p.number }}</a>
+                        <div class="small text-muted">{{ p.title|truncatechars:40 }} — {{ p.total_amount|floatformat:0 }} ₽</div>
+                    </div>
+                    <span class="badge bg-{% if p.status == 'accepted' %}success{% elif p.status == 'rejected' %}danger{% elif p.status == 'sent' %}info{% else %}secondary{% endif %}">
+                        {{ p.get_status_display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Связанные договоры ── #}
+        {% if related_contracts %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Договоры</h5>
+                <span class="badge bg-secondary">{{ related_contracts|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for c in related_contracts %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <a href="{% url 'contracts:detail' c.pk %}" class="text-decoration-none fw-medium">{{ c.number }}</a>
+                        <div class="small text-muted">{{ c.subject|truncatechars:40 }} — {{ c.amount|floatformat:0 }} ₽</div>
+                    </div>
+                    <span class="badge bg-{% if c.status == 'signed' or c.status == 'active' %}success{% elif c.status == 'terminated' %}danger{% else %}secondary{% endif %}">
+                        {{ c.get_status_display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Связанные документы ── #}
+        {% if related_documents %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Документы</h5>
+                <span class="badge bg-secondary">{{ related_documents|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for d in related_documents %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <a href="{% url 'documents:detail' d.pk %}" class="text-decoration-none fw-medium">{{ d.number }}</a>
+                        <div class="small text-muted">{{ d.get_doc_type_display }} — {{ d.amount|floatformat:0 }} ₽</div>
+                    </div>
+                    <span class="badge bg-{% if d.status == 'paid' or d.status == 'signed' %}success{% elif d.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                        {{ d.get_status_display }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Связанные проекты ── #}
+        {% if related_projects %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-folder me-2"></i>Проекты</h5>
+                <span class="badge bg-secondary">{{ related_projects|length }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% for proj in related_projects %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <a href="{% url 'projects:project_detail' proj.pk %}" class="text-decoration-none fw-medium">{{ proj.name|truncatechars:40 }}</a>
+                    <span class="badge bg-{{ proj.status_color }}">{{ proj.get_status_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Связанные задачи (краткий обзор) ── #}
+        {% if related_tasks %}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Задачи</h5>
+            </div>
+            <div class="card-body p-0">
+                {% for t in related_tasks %}
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                    <div>
+                        <a href="{% url 'tasks:task_detail' t.pk %}" class="text-decoration-none small fw-medium">{{ t.title|truncatechars:35 }}</a>
+                        <div class="small text-muted">{{ t.assignee.get_full_name|default:"Не назначен" }}</div>
+                    </div>
+                    <span class="badge bg-{{ t.status_color }}">{{ t.get_status_display }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# ── Боковая панель ── #}
+    <div class="col-lg-4">
+        {# Контактная информация #}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user me-2"></i>Контактная информация</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Клиент:</strong><br>
+                    {{ request_obj.client.get_full_name|default:request_obj.client.username }}
+                </p>
+                {% if request_obj.company_name %}
+                <p class="mb-2">
+                    <strong>Компания:</strong><br>
+                    {{ request_obj.company_name }}
+                </p>
+                {% endif %}
+                <p class="mb-2">
+                    <strong>Email:</strong><br>
+                    <a href="mailto:{{ request_obj.contact_email }}">{{ request_obj.contact_email }}</a>
+                </p>
+                <p class="mb-2">
+                    <strong>Телефон:</strong><br>
+                    <a href="tel:{{ request_obj.contact_phone }}">{{ request_obj.contact_phone }}</a>
+                </p>
+                <hr class="my-2">
+                <a href="{% url 'chat:start_request' request_obj.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-comments me-1"></i>Чат по заявке
+                </a>
+            </div>
+        </div>
+
+        {# Сведения о заявке #}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Сведения</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Создана:</strong><br>{{ request_obj.created_at|date:"d.m.Y H:i" }}</p>
+                <p class="mb-2"><strong>Обновлена:</strong><br>{{ request_obj.updated_at|date:"d.m.Y H:i" }}</p>
+                {% if request_obj.completed_at %}
+                <p class="mb-2"><strong>Завершена:</strong><br>{{ request_obj.completed_at|date:"d.m.Y H:i" }}</p>
+                {% endif %}
+                {% if request_obj.analyst %}
+                <p class="mb-2"><strong>Аналитик:</strong><br>{{ request_obj.analyst.get_full_name|default:request_obj.analyst.username }}</p>
+                {% endif %}
+                {% if request_obj.executor %}
+                <p class="mb-0"><strong>Исполнитель:</strong><br>{{ request_obj.executor.get_full_name|default:request_obj.executor.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Назначения (только админ) #}
+        {% if can_assign %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-user-shield me-2"></i>Назначения</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="assign">
+                    <div class="mb-3">
+                        <label class="form-label">Аналитик</label>
+                        {{ assignment_form.analyst }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Исполнитель</label>
+                        {{ assignment_form.executor }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-check-circle me-1"></i>Сохранить назначения
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Управление статусом — только для администратора #}
+        {% if user.profile.role == 'admin' and can_edit_status %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Управление статусом (админ)</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="status">
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        {{ status_form.status }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий к смене статуса</label>
+                        {{ status_form.status_comment }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-1"></i>Сохранить
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Клиент: кнопка отмены (скрыта если КП принято) #}
+        {% if user == request_obj.client and request_obj.status != 'CANCELLED' and request_obj.status != 'COMPLETED' and request_obj.status != 'ARCHIVED' and request_obj.status != 'REJECTED' and not has_accepted_proposal %}
+        <div class="card glass-card mb-4 border-danger">
+            <div class="card-body">
+                <form method="post" onsubmit="return confirm('Вы уверены, что хотите отменить заявку?')">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="client_cancel">
+                    <button type="submit" class="btn btn-outline-danger w-100">
+                        <i class="fas fa-times-circle me-1"></i>Отменить заявку
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

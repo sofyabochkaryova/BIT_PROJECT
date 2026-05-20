@@ -1,0 +1,85 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Мои проекты — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+{% if is_manager %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:all_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Диспетчер задач
+    </a>
+</li>
+{% else %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:executor_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:my_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Мои задачи
+    </a>
+</li>
+{% endif %}
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'projects:my_projects' %}">
+        <i class="fas fa-folder me-2"></i>Мои проекты
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Мои проекты{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    {% if projects %}
+        {% for project in projects %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card glass-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">{{ project.name|truncatechars:30 }}</h5>
+                        <span class="badge bg-{{ project.status_color }}">{{ project.get_status_display }}</span>
+                    </div>
+                    
+                    {% if project.description %}
+                    <p class="card-text text-muted small">{{ project.description|truncatechars:100 }}</p>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small>Прогресс</small>
+                            <small>{{ project.progress }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-{{ project.progress_color }}" style="width: {{ project.progress }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            {% if project.end_date %}До {{ project.end_date|date:"d.m.Y" }}{% endif %}
+                        </small>
+                        <a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                            Открыть
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-0">Нет доступных проектов</p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

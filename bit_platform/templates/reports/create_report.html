@@ -1,0 +1,159 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}
+<i class="fas fa-plus me-2"></i>Создать отчёт
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'reports:list' %}">
+        <i class="fas fa-file-alt me-2"></i>Отчёты
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <form method="post" id="createReportForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Название отчёта <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control form-control-lg" 
+                               placeholder="Например: Отчёт по заявкам за январь" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Тип отчёта <span class="text-danger">*</span></label>
+                        <div class="row g-3">
+                            <div class="col-6 col-md">
+                                <div class="report-card active" data-type="requests">
+                                    <i class="fas fa-file-invoice fa-2x mb-2 d-block"></i>
+                                    <span>По заявкам</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md">
+                                <div class="report-card" data-type="projects">
+                                    <i class="fas fa-project-diagram fa-2x mb-2 d-block"></i>
+                                    <span>По проектам</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md">
+                                <div class="report-card" data-type="tasks">
+                                    <i class="fas fa-tasks fa-2x mb-2 d-block"></i>
+                                    <span>По задачам</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md">
+                                <div class="report-card" data-type="users">
+                                    <i class="fas fa-users-cog fa-2x mb-2 d-block"></i>
+                                    <span>Сотрудники</span>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md">
+                                <div class="report-card" data-type="financial">
+                                    <i class="fas fa-user-tie fa-2x mb-2 d-block"></i>
+                                    <span>Клиенты</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="report_type" id="selectedReportType" value="requests">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Период</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">С</span>
+                                    <input type="date" name="date_from" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text">По</span>
+                                    <input type="date" name="date_to" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted">Оставьте пустым для выгрузки всех данных</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3" 
+                                  placeholder="Опишите цель отчёта (необязательно)"></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'reports:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Назад
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-export me-2"></i>Создать отчёт
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.report-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.report-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.report-card.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+}
+
+.report-card:active {
+    transform: scale(0.96);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.report-card');
+    const hiddenInput = document.getElementById('selectedReportType');
+    
+    cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Убираем active класс у всех
+            cards.forEach(c => c.classList.remove('active'));
+            // Добавляем active текущему
+            this.classList.add('active');
+            // Обновляем скрытое поле
+            hiddenInput.value = this.dataset.type;
+        });
+    });
+});
+</script>
+{% endblock %}

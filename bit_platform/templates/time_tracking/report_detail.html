@@ -1,0 +1,127 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block dashboard_title %}<i class="fas fa-file-alt me-2"></i>{{ report.title|truncatechars:50 }}{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'tasks:task_detail' report.task.pk %}"><i class="fas fa-arrow-left me-2"></i>К задаче</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'time_tracking:my_reports' %}"><i class="fas fa-list me-2"></i>Все отчёты</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'time_tracking:download_report_docx' report.pk %}"><i class="fas fa-download me-2"></i>Скачать Word</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        {# Содержимое отчёта #}
+        <div class="card glass-card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ report.title }}</h5>
+                {% if report.status == 'accepted' %}
+                    <span class="badge bg-success"><i class="fas fa-check me-1"></i>Принят</span>
+                {% elif report.status == 'revision' %}
+                    <span class="badge bg-warning text-dark"><i class="fas fa-redo me-1"></i>На доработке</span>
+                {% elif report.status == 'submitted' %}
+                    <span class="badge bg-info"><i class="fas fa-hourglass-half me-1"></i>На проверке</span>
+                {% else %}
+                    <span class="badge bg-secondary">Черновик</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-user me-1"></i>{{ report.author.get_full_name|default:report.author.username }} &middot;
+                        <i class="fas fa-calendar me-1"></i>{{ report.created_at|date:"d.m.Y H:i" }} &middot;
+                        <i class="fas fa-clock me-1"></i>{{ report.hours_total|floatformat:1 }}ч
+                    </small>
+                </div>
+                <div class="border rounded p-3 bg-light" style="white-space: pre-wrap;">{{ report.content }}</div>
+            </div>
+        </div>
+
+        {# Комментарий аналитика при статусе "На доработке" #}
+        {% if report.status == 'revision' and report.review_comment %}
+        <div class="card border-warning mb-3">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h6 class="mb-0 text-warning"><i class="fas fa-comment-dots me-2"></i>Комментарий аналитика</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1">{{ report.review_comment }}</p>
+                <small class="text-muted">{{ report.reviewer.get_full_name|default:report.reviewer.username }} — {{ report.reviewed_at|date:"d.m.Y H:i" }}</small>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Форма повторной отправки от автора #}
+        {% if report.status == 'revision' and user == report.author %}
+        <div class="card glass-card mb-3">
+            <div class="card-header"><h6 class="mb-0">Исправить и отправить повторно</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="resubmit">
+                    <div class="mb-3">
+                        <textarea class="form-control" name="content" rows="6" required>{{ report.content }}</textarea>
+                    </div>
+                    <button class="btn btn-primary"><i class="fas fa-paper-plane me-1"></i>Отправить исправленный</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Форма проверки для аналитика #}
+        {% if report.status == 'submitted' and is_reviewer %}
+        <div class="card glass-card mb-3">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Проверка отчёта</h6></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea class="form-control" name="review_comment" rows="3" placeholder="Необязательно при принятии"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success" name="action" value="accept"><i class="fas fa-check me-1"></i>Принять</button>
+                        <button class="btn btn-warning" name="action" value="revision"><i class="fas fa-redo me-1"></i>На доработку</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {# Информация о задаче #}
+        <div class="card glass-card mb-3">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-tasks me-2"></i>Задача</h6></div>
+            <div class="card-body">
+                <a href="{% url 'tasks:task_detail' report.task.pk %}" class="fw-bold">{{ report.task.title }}</a>
+                <div class="small text-muted mt-1">
+                    Проект: {{ report.task.project.name|default:"—" }}
+                </div>
+            </div>
+        </div>
+
+        {# Записи учёта времени #}
+        <div class="card glass-card">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-clock me-2"></i>Время ({{ entries.count }} записей)</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th>Дата</th><th>Описание</th><th class="text-end">Часы</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in entries %}
+                        <tr>
+                            <td class="small">{{ e.date|date:"d.m" }}</td>
+                            <td class="small">{{ e.description|truncatechars:25 }}</td>
+                            <td class="text-end fw-bold small">{{ e.hours }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted">Нет записей</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

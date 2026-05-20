@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд — ООО «БИТ»{% endblock %}
+
+{% block content %}
+<section class="dashboard-page">
+    <div class="container">
+        <div class="dashboard-wrap reveal is-visible">
+            <aside class="dashboard-side">
+                <h3 class="mb-4">CRM</h3>
+                <p class="dash-side-title">Обзор</p>
+                <a class="dash-link active" href="#">Дашборд</a>
+                <a class="dash-link" href="#">Проекты</a>
+                <a class="dash-link" href="#">Аналитика</a>
+                <a class="dash-link" href="#">Отчеты</a>
+                <p class="dash-side-title mt-4">Управление</p>
+                <a class="dash-link" href="#">Заявки</a>
+                <a class="dash-link" href="#">Документы</a>
+                <a class="dash-link" href="#">Сотрудники</a>
+                <a class="dash-link" href="#">Настройки</a>
+            </aside>
+
+            <div class="dashboard-main">
+                <div class="dashboard-head">
+                    <div>
+                        <h2 class="mb-1">Дашборд</h2>
+                        <p class="text-muted mb-0">Ключевые показатели по продажам, проектам и загрузке команды</p>
+                    </div>
+                    <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">На сайт</a>
+                </div>
+
+                <div class="dash-cards-grid">
+                    <article class="dash-card reveal">
+                        <p class="dash-label">Открытые заявки</p>
+                        <h3>{{ open_requests }}</h3>
+                        <span class="dash-chip">+8% за неделю</span>
+                    </article>
+                    <article class="dash-card reveal">
+                        <p class="dash-label">Активные проекты</p>
+                        <h3>{{ active_projects }}</h3>
+                        <span class="dash-chip">+2 новых</span>
+                    </article>
+                    <article class="dash-card reveal">
+                        <p class="dash-label">Конверсия в договор</p>
+                        <h3>{{ conversion_rate }}%</h3>
+                        <span class="dash-chip">стабильно</span>
+                    </article>
+                    <article class="dash-card reveal">
+                        <p class="dash-label">Выручка месяца</p>
+                        <h3>{{ revenue }}</h3>
+                        <span class="dash-chip">план выполнен</span>
+                    </article>
+                </div>
+
+                <div class="dash-layout mt-4">
+                    <article class="dash-panel reveal">
+                        <div class="panel-head">
+                            <h4 class="mb-0">Динамика воронки</h4>
+                            <small class="text-muted">Последние 7 периодов</small>
+                        </div>
+                        <div class="bar-chart">
+                            {% for value in pipeline %}
+                                <div class="bar" style="--h: {{ value }}%"></div>
+                            {% endfor %}
+                        </div>
+                    </article>
+
+                    <article class="dash-panel reveal">
+                        <div class="panel-head">
+                            <h4 class="mb-0">Успешность закрытия</h4>
+                            <small class="text-muted">Текущий месяц</small>
+                        </div>
+                        <div class="donut-wrap">
+                            <div class="donut" style="--v: {{ conversion_rate }};">
+                                <span>{{ conversion_rate }}%</span>
+                            </div>
+                            <p class="text-muted mb-0 mt-3">Доля заявок, дошедших до договора/проекта</p>
+                        </div>
+                    </article>
+                </div>
+
+                <article class="dash-panel reveal mt-4">
+                    <div class="panel-head">
+                        <h4 class="mb-0">Загрузка подразделений</h4>
+                    </div>
+                    <div class="load-list">
+                        {% for row in team_load %}
+                            <div class="load-item">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <strong>{{ row.name }}</strong>
+                                    <span>{{ row.value }}%</span>
+                                </div>
+                                <div class="load-track"><span style="width: {{ row.value }}%"></span></div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block title %}Реквизиты компании{% endblock %}
+{% block dashboard_title %}<i class="fas fa-building me-2"></i>Реквизиты компании{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}"><i class="fas fa-home me-2"></i>Дашборд</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-9">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            {# Основные данные #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-building me-2"></i>Основные данные</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Краткое наименование <span class="text-danger">*</span></label>
+                            <input class="form-control" name="short_name" value="{{ company.short_name|default:'' }}" placeholder='ООО «Рога и Копыта»' required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Форма</label>
+                            <select class="form-select" name="legal_form">
+                                {% for val, label in form_choices %}
+                                <option value="{{ val }}" {% if company and company.legal_form == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ИНН</label>
+                            <input class="form-control" name="inn" value="{{ company.inn|default:'' }}" placeholder="7701234567" maxlength="12">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Полное наименование</label>
+                            <input class="form-control" name="full_name" value="{{ company.full_name|default:'' }}" placeholder='Общество с ограниченной ответственностью «Рога и Копыта»'>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Реквизиты #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Юридические реквизиты</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">КПП</label>
+                            <input class="form-control" name="kpp" value="{{ company.kpp|default:'' }}" maxlength="9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">ОГРН / ОГРНИП</label>
+                            <input class="form-control" name="ogrn" value="{{ company.ogrn|default:'' }}" maxlength="15">
+                        </div>
+                        <div class="col-md-4"></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Юридический адрес</label>
+                            <textarea class="form-control" name="legal_address" rows="2">{{ company.legal_address|default:'' }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Фактический адрес</label>
+                            <textarea class="form-control" name="actual_address" rows="2">{{ company.actual_address|default:'' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Банк #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-university me-2"></i>Банковские реквизиты</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Наименование банка</label>
+                            <input class="form-control" name="bank_name" value="{{ company.bank_name|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">БИК</label>
+                            <input class="form-control" name="bik" value="{{ company.bik|default:'' }}" maxlength="9">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Кор. счёт</label>
+                            <input class="form-control" name="corr_account" value="{{ company.corr_account|default:'' }}" maxlength="20">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Расчётный счёт</label>
+                            <input class="form-control" name="settlement_account" value="{{ company.settlement_account|default:'' }}" maxlength="20">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Руководитель #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-user-tie me-2"></i>Руководитель</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label">ФИО руководителя</label>
+                            <input class="form-control" name="director_name" value="{{ company.director_name|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Должность</label>
+                            <input class="form-control" name="director_position" value="{{ company.director_position|default:'Генеральный директор' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Действует на основании</label>
+                            <input class="form-control" name="director_basis" value="{{ company.director_basis|default:'Устава' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Контакты #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-phone me-2"></i>Контакты</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Телефон</label>
+                            <input class="form-control" name="phone" value="{{ company.phone|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Email</label>
+                            <input class="form-control" type="email" name="email" value="{{ company.email|default:'' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Сайт</label>
+                            <input class="form-control" name="website" value="{{ company.website|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Печать и подпись #}
+            <div class="card glass-card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-stamp me-2"></i>Печать и подпись для документов</h6></div>
+                <div class="card-body">
+                    <div class="alert alert-info small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Загрузите изображения печати и подписи руководителя (PNG с прозрачным фоном). 
+                        Они будут подставляться в генерируемые документы (КП, Договор, Акт).
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Печать организации</label>
+                            {% if company and company.stamp_image %}
+                            <div class="mb-2">
+                                <img src="{{ company.stamp_image.url }}" alt="Печать" style="max-height: 80px;" class="border rounded p-1">
+                            </div>
+                            {% endif %}
+                            <input class="form-control" type="file" name="stamp_image" accept="image/png,image/jpeg">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Подпись руководителя</label>
+                            {% if company and company.signature_image %}
+                            <div class="mb-2">
+                                <img src="{{ company.signature_image.url }}" alt="Подпись" style="max-height: 80px;" class="border rounded p-1">
+                            </div>
+                            {% endif %}
+                            <input class="form-control" type="file" name="signature_image" accept="image/png,image/jpeg">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button class="btn btn-primary btn-lg px-5">
+                    <i class="fas fa-save me-2"></i>Сохранить реквизиты
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-3">
+        <div class="card glass-card">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Зачем это нужно?</h6></div>
+            <div class="card-body small">
+                <p>Реквизиты компании используются для автоматической генерации документов:</p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-file-signature text-primary me-2"></i>Коммерческие предложения</li>
+                    <li class="mb-2"><i class="fas fa-file-contract text-primary me-2"></i>Договоры</li>
+                    <li class="mb-2"><i class="fas fa-file-invoice text-primary me-2"></i>Счета на оплату</li>
+                    <li class="mb-2"><i class="fas fa-file-check text-primary me-2"></i>Акты выполненных работ</li>
+                </ul>
+                <p class="text-muted">Печать и подпись будут встроены прямо в документы.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

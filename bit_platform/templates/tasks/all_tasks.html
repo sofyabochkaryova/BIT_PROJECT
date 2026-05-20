@@ -1,0 +1,156 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Диспетчер задач — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:all_requests' %}">
+        <i class="fas fa-inbox me-2"></i>Все заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'tasks:all_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Диспетчер задач
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Диспетчер задач{% endblock %}
+
+{% block dashboard_actions %}
+{% if unassigned %}
+<a href="{% url 'tasks:all_tasks' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-list me-1"></i>Все задачи
+</a>
+{% else %}
+<a href="{% url 'tasks:all_tasks' %}?unassigned=1" class="btn btn-outline-warning btn-sm">
+    <i class="fas fa-user-slash me-1"></i>Без исполнителя
+</a>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+{# ── Фильтры ── #}
+<div class="card glass-card mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="d-flex gap-3 align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0">Статус:</label>
+                <select name="status" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="">Все</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0">Приоритет:</label>
+                <select name="priority" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="">Все</option>
+                    {% for value, label in priorities %}
+                    <option value="{{ value }}" {% if current_priority == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if current_status or current_priority or unassigned or overdue %}
+            <a href="{% url 'tasks:all_tasks' %}" class="btn btn-sm btn-outline-secondary">Сбросить</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{# ── Таблица задач ── #}
+<div class="card glass-card">
+    <div class="card-body p-0">
+        {% if tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Задача</th>
+                        <th>Проект</th>
+                        <th>Исполнитель</th>
+                        <th>Приоритет</th>
+                        <th>Статус</th>
+                        <th>Дедлайн</th>
+                        <th style="min-width:200px">Назначить</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr class="{% if not task.assignee %}table-warning{% endif %}">
+                        <td>
+                            <a href="{% url 'tasks:task_detail' task.pk %}" class="text-decoration-none fw-medium">
+                                {{ task.title|truncatechars:35 }}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'projects:project_detail' task.project.pk %}" class="text-decoration-none small">
+                                {{ task.project.name|truncatechars:20 }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if task.assignee %}
+                            <span class="small">{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"><i class="fas fa-user-slash me-1"></i>Не назначен</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-{{ task.priority_color }}">{{ task.get_priority_display }}</span></td>
+                        <td><span class="badge bg-{{ task.status_color }}">{{ task.get_status_display }}</span></td>
+                        <td>
+                            {% if task.due_date %}
+                            {{ task.due_date|date:"d.m.Y" }}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form method="post" action="{% url 'tasks:task_detail' task.pk %}" class="d-flex gap-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="assign_executor">
+                                <select name="executor_id" class="form-select form-select-sm" style="width:130px">
+                                    <option value="">-- Выбрать --</option>
+                                    {% for ex in executors %}
+                                    <option value="{{ ex.pk }}" {% if task.assignee_id == ex.pk %}selected{% endif %}>{{ ex.get_full_name|default:ex.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Назначить"><i class="fas fa-check"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-0">Задач не найдено</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Пагинация ── #}
+{% if tasks.has_other_pages %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if tasks.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ tasks.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_priority %}&priority={{ current_priority }}{% endif %}{% if unassigned %}&unassigned=1{% endif %}{% if overdue %}&overdue=1{% endif %}">«</a></li>
+        {% endif %}
+        {% for num in tasks.paginator.page_range %}
+        <li class="page-item {% if tasks.number == num %}active{% endif %}"><a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_priority %}&priority={{ current_priority }}{% endif %}{% if unassigned %}&unassigned=1{% endif %}{% if overdue %}&overdue=1{% endif %}">{{ num }}</a></li>
+        {% endfor %}
+        {% if tasks.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ tasks.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_priority %}&priority={{ current_priority }}{% endif %}{% if unassigned %}&unassigned=1{% endif %}{% if overdue %}&overdue=1{% endif %}">»</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

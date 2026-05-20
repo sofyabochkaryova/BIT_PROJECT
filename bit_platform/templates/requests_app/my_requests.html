@@ -1,0 +1,154 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Мои заявки — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:client_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'requests_app:my_requests' %}">
+        <i class="fas fa-clipboard-list me-2"></i>Мои заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:create_request' %}">
+        <i class="fas fa-plus-circle me-2"></i>Новая заявка
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Мои заявки{% endblock %}
+
+{% block dashboard_actions %}
+<a href="{% url 'requests_app:create_request' %}" class="btn btn-liquid">
+    <i class="fas fa-plus me-1"></i>Новая заявка
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Фильтры -->
+<div class="card glass-card mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="d-flex gap-3 align-items-center flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 text-nowrap">Статус:</label>
+                <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">Все</option>
+                    {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if current_status %}
+                <a href="{% url 'requests_app:my_requests' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Сбросить
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Список заявок -->
+<div class="card glass-card">
+    <div class="card-body p-0">
+        {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Название</th>
+                            <th>Услуга</th>
+                            <th>Приоритет</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td><strong>#{{ req.pk }}</strong></td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' req.pk %}" class="text-decoration-none">
+                                    {{ req.title|truncatechars:40 }}
+                                </a>
+                            </td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge bg-{% if req.priority == 'low' %}secondary{% elif req.priority == 'medium' %}info{% elif req.priority == 'high' %}warning{% else %}danger{% endif %}">
+                                    {{ req.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ req.status_color }}">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.created_at|date:"d.m.Y" }}</td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' req.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Пагинация -->
+            {% if requests.has_other_pages %}
+            <div class="card-footer">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0 justify-content-center">
+                        {% if requests.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ requests.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in requests.paginator.page_range %}
+                            {% if requests.number == num %}
+                                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > requests.number|add:'-3' and num < requests.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if requests.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ requests.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-3">
+                    {% if current_status %}
+                        Нет заявок со статусом "{{ current_status }}"
+                    {% else %}
+                        У вас пока нет заявок
+                    {% endif %}
+                </p>
+                <a href="{% url 'requests_app:create_request' %}" class="btn btn-liquid">
+                    <i class="fas fa-plus me-1"></i>Создать заявку
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Регистрация — ООО «БИТ»{% endblock %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="auth-box reveal is-visible glass-card">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 mb-2">Регистрация</h1>
+                        <p class="text-muted">Создайте аккаунт, чтобы получить доступ к личному кабинету</p>
+                    </div>
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" class="auth-form">
+                        {% csrf_token %}
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <small class="text-danger">{{ form.first_name.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <small class="text-danger">{{ form.last_name.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <small class="text-danger">{{ form.username.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <small class="text-danger">{{ form.email.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.phone }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.company }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <small class="text-danger">{{ form.password1.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <small class="text-danger">{{ form.password2.errors.0 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-liquid w-100 btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i>Создать аккаунт
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <p class="mb-0">Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <p class="text-center text-muted small mb-0">
+                        Нажимая «Создать аккаунт», вы соглашаетесь с 
+                        <a href="{% url 'core:terms' %}">условиями использования</a> и 
+                        <a href="{% url 'core:privacy' %}">политикой конфиденциальности</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

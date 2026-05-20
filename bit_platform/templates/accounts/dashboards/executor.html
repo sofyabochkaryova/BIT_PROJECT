@@ -1,0 +1,169 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Кабинет исполнителя — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'accounts:executor_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:my_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Мои задачи
+        {% if tasks_in_progress %}
+            <span class="badge bg-primary ms-auto">{{ tasks_in_progress }}</span>
+        {% endif %}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'projects:my_projects' %}">
+        <i class="fas fa-folder me-2"></i>Мои проекты
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'time_tracking:my_reports' %}">
+        <i class="fas fa-clock me-2"></i>Учёт времени и отчёты
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Кабинет исполнителя{% endblock %}
+
+{% block dashboard_content %}
+<!-- Статистика -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-info-soft">
+                <i class="fas fa-list-check"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ tasks_todo }}</div>
+                <div class="stat-card-label">К выполнению</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-primary-soft">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ tasks_in_progress }}</div>
+                <div class="stat-card-label">В работе</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-success-soft">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ tasks_done }}</div>
+                <div class="stat-card-label">Выполнено</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Мои задачи -->
+    <div class="col-lg-8">
+        <div class="card glass-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Мои задачи</h5>
+                <a href="{% url 'tasks:my_tasks' %}" class="btn btn-sm btn-outline-primary">Все задачи</a>
+            </div>
+            <div class="card-body p-0">
+                {% if my_tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Задача</th>
+                                    <th>Проект</th>
+                                    <th>Приоритет</th>
+                                    <th>Статус</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in my_tasks %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ task.title|truncatechars:35 }}</strong>
+                                        {% if task.due_date %}
+                                            <br><small class="text-muted">Срок: {{ task.due_date|date:"d.m.Y" }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ task.project.name|truncatechars:20 }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ task.priority_color }}">
+                                            {{ task.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ task.status_color }}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'tasks:task_detail' task.pk %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-coffee fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">Нет назначенных задач</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Мои проекты -->
+    <div class="col-lg-4">
+        <div class="card glass-card h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-folder me-2"></i>Проекты</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if my_projects %}
+                    <ul class="list-group list-group-flush">
+                        {% for project in my_projects %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ project.name|truncatechars:25 }}</strong>
+                                    <br>
+                                    <span class="badge bg-{{ project.status_color }}">{{ project.get_status_display }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <div class="progress" style="width: 60px; height: 6px;">
+                                        <div class="progress-bar" style="width: {{ project.progress }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ project.progress }}%</small>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-folder-open fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Нет проектов</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

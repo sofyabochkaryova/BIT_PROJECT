@@ -1,0 +1,236 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block dashboard_title %}<i class="fas fa-file-lines me-2"></i>{{ document.number }}{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-2"></i>Документы</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'requests_app:request_detail' document.request.pk %}"><i class="fas fa-clipboard-list me-2"></i>К заявке</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card glass-card animate__animated animate__fadeInUp">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ document.title }}</h5>
+                <span class="badge bg-{% if document.status == 'paid' or document.status == 'signed' %}success{% elif document.status == 'cancelled' %}danger{% elif document.status == 'issued' %}primary{% elif document.status == 'approved' %}info{% else %}secondary{% endif %} fs-6">
+                    {{ document.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <small class="text-muted">Тип документа</small>
+                        <div class="fw-medium">{{ document.get_doc_type_display }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Сумма</small>
+                        <div class="h5 fw-bold mb-0">{{ document.amount|floatformat:2 }} ₽</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Заявка</small>
+                        <div><a href="{% url 'requests_app:request_detail' document.request.pk %}">{{ document.request.number }}</a></div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Дата выставления</small>
+                        <div>{{ document.issue_date|date:"d.m.Y"|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Срок оплаты/подписания</small>
+                        <div>{{ document.due_date|date:"d.m.Y"|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Создал</small>
+                        <div>{{ document.created_by.get_full_name|default:document.created_by.username|default:"—" }}</div>
+                    </div>
+                </div>
+
+                {% if document.contract %}
+                <hr>
+                <div class="mb-2">
+                    <small class="text-muted">Договор</small>
+                    <div><a href="{% url 'contracts:detail' document.contract.pk %}">{{ document.contract.number }}</a> — {{ document.contract.subject|truncatechars:60 }}</div>
+                </div>
+                {% endif %}
+
+                {% if document.proposal %}
+                <div class="mb-2">
+                    <small class="text-muted">КП</small>
+                    <div><a href="{% url 'proposals:detail' document.proposal.pk %}">{{ document.proposal.number }}</a></div>
+                </div>
+                {% endif %}
+
+                {% if document.description %}
+                <hr>
+                <h6>Содержимое</h6>
+                <p class="mb-0">{{ document.description|linebreaks }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Скачивание документа ── #}
+        <div class="card glass-card mt-4 animate__animated animate__fadeInUp" style="animation-delay:.1s">
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-download me-2"></i>Скачать документ</h5></div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Документ будет сгенерирован с актуальными данными по заявке, договору и позициям.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'documents:download' document.pk %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-file-word me-2"></i>Скачать Word (.docx)
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {# ── Подписание клиентом ── #}
+        {% if pending_signature %}
+        <div class="card glass-card mt-4 border-warning animate__animated animate__fadeInUp" style="animation-delay:.2s">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-signature me-2 text-warning"></i>Подписание документа</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Пожалуйста, ознакомьтесь с документом (скачайте его выше) и подтвердите подписание или отклоните.
+                </div>
+                <form method="post" action="{% url 'documents:sign' document.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="sign_comment" class="form-label">Комментарий (необязательно)</label>
+                        <textarea name="sign_comment" id="sign_comment" class="form-control" rows="2" placeholder="Ваш комментарий..."></textarea>
+                    </div>
+                    <div class="d-flex gap-3">
+                        <button type="submit" name="sign_action" value="sign" class="btn btn-success btn-lg"
+                                onclick="return confirm('Вы подтверждаете электронное подписание документа {{ document.number }}?')">
+                            <i class="fas fa-check-circle me-2"></i>Подписать документ
+                        </button>
+                        <button type="submit" name="sign_action" value="reject" class="btn btn-outline-danger"
+                                onclick="return confirm('Отклонить документ {{ document.number }}?')">
+                            <i class="fas fa-times-circle me-2"></i>Отклонить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── История подписей ── #}
+        {% if signatures %}
+        <div class="card glass-card mt-4 animate__animated animate__fadeInUp" style="animation-delay:.3s">
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-history me-2"></i>Подписи</h5></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr><th>Подписант</th><th>Статус</th><th>Дата</th><th>IP</th><th>Комментарий</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for sig in signatures %}
+                            <tr>
+                                <td><i class="fas fa-user me-1"></i>{{ sig.signer.get_full_name|default:sig.signer.username }}</td>
+                                <td>
+                                    <span class="badge bg-{% if sig.status == 'signed' %}success{% elif sig.status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                        {% if sig.status == 'signed' %}<i class="fas fa-check me-1"></i>Подписан
+                                        {% elif sig.status == 'rejected' %}<i class="fas fa-times me-1"></i>Отклонён
+                                        {% else %}<i class="fas fa-clock me-1"></i>Ожидание{% endif %}
+                                    </span>
+                                </td>
+                                <td>{{ sig.signed_at|date:"d.m.Y H:i"|default:"—" }}</td>
+                                <td><small class="text-muted">{{ sig.ip_address|default:"—" }}</small></td>
+                                <td><small>{{ sig.comment|default:"—" }}</small></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        {# ── Управление статусом ── #}
+        {% if can_manage and allowed_transitions %}
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-cog me-2"></i>Управление статусом</h6></div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% for value, label in allowed_transitions %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="{{ value }}">
+                        <button type="submit" class="btn btn-{% if value == 'paid' %}success{% elif value == 'signed' %}primary{% elif value == 'approved' %}info{% elif value == 'cancelled' %}danger{% elif value == 'issued' %}warning{% else %}outline-secondary{% endif %} w-100">
+                            {% if value == 'issued' %}<i class="fas fa-paper-plane me-1"></i>
+                            {% elif value == 'approved' %}<i class="fas fa-check me-1"></i>
+                            {% elif value == 'signed' %}<i class="fas fa-signature me-1"></i>
+                            {% elif value == 'paid' %}<i class="fas fa-money-bill-wave me-1"></i>
+                            {% elif value == 'cancelled' %}<i class="fas fa-ban me-1"></i>
+                            {% else %}<i class="fas fa-edit me-1"></i>{% endif %}
+                            {{ label }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Действия аналитика ── #}
+        {% if can_manage and document.status == 'draft' %}
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Действия</h6></div>
+            <div class="card-body d-grid gap-2">
+                <form method="post" action="{% url 'documents:send_for_signing' document.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning w-100"
+                            onclick="return confirm('Отправить документ {{ document.number }} на подписание клиенту?')">
+                        <i class="fas fa-paper-plane me-1"></i>Отправить на подписание
+                    </button>
+                </form>
+                <a href="{% url 'documents:download' document.pk %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-file-word me-1"></i>Скачать Word
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Пайплайн документа ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-route me-2"></i>Этапы</h6></div>
+            <div class="card-body">
+                {% with current=document.status %}
+                {% for code, label in document.STATUS_CHOICES %}
+                {% if code != 'cancelled' %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle me-2 flex-shrink-0
+                        {% if code == current %}bg-primary
+                        {% elif code == 'draft' and current != 'draft' %}bg-success
+                        {% elif code == 'issued' and current != 'draft' and current != 'issued' %}bg-success
+                        {% elif code == 'approved' and current == 'signed' or current == 'paid' %}bg-success
+                        {% elif code == 'signed' and current == 'paid' %}bg-success
+                        {% else %}bg-secondary opacity-25{% endif %}"
+                        style="width:10px;height:10px"></div>
+                    <small class="{% if code == current %}fw-bold text-primary{% endif %}">{{ label }}</small>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% if current == 'cancelled' %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle me-2 bg-danger flex-shrink-0" style="width:10px;height:10px"></div>
+                    <small class="fw-bold text-danger">Отменён</small>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+
+        {# ── Сведения ── #}
+        <div class="card glass-card">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Сведения</h6></div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Создан:</strong><br>{{ document.created_at|date:"d.m.Y H:i" }}</p>
+                <p class="mb-0"><strong>Обновлён:</strong><br>{{ document.updated_at|date:"d.m.Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

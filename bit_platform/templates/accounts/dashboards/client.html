@@ -1,0 +1,209 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Личный кабинет — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'accounts:client_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:my_requests' %}">
+        <i class="fas fa-clipboard-list me-2"></i>Мои заявки
+        {% if active_requests %}
+            <span class="badge bg-primary ms-auto">{{ active_requests }}</span>
+        {% endif %}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:create_request' %}">
+        <i class="fas fa-plus-circle me-2"></i>Новая заявка
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Личный кабинет клиента{% endblock %}
+
+{% block dashboard_actions %}
+<a href="{% url 'requests_app:create_request' %}" class="btn btn-liquid">
+    <i class="fas fa-plus me-1"></i>Новая заявка
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<!-- Статистика -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-primary-soft">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ total_requests }}</div>
+                <div class="stat-card-label">Всего заявок</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-warning-soft">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ active_requests }}</div>
+                <div class="stat-card-label">В работе</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-success-soft">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ completed_requests }}</div>
+                <div class="stat-card-label">Завершено</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-{% if pending_signatures %}danger{% else %}secondary{% endif %}-soft">
+                <i class="fas fa-file-signature"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ pending_signatures|length }}</div>
+                <div class="stat-card-label">На подпись</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Документы, ожидающие подписания ── #}
+{% if pending_signatures %}
+<div class="card glass-card mb-4 border-info">
+    <div class="card-header bg-info bg-opacity-10">
+        <h5 class="mb-0"><i class="fas fa-file-signature me-2 text-info"></i>Требуют подписания</h5>
+    </div>
+    <div class="card-body p-0">
+        {% for doc in pending_signatures %}
+        <div class="d-flex justify-content-between align-items-center px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div>
+                <span class="fw-medium">{{ doc.get_doc_type_display }}</span> — {{ doc.number }}
+                <br><small class="text-muted">Заявка: {{ doc.request.number }}</small>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'documents:download' doc.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-file-word me-1"></i>Word
+                </a>
+                <a href="{% url 'documents:detail' doc.pk %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-signature me-1"></i>Подписать
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{# ── Документы клиента (КП, договоры, акты, счета) ── #}
+{% if client_documents %}
+<div class="card glass-card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Мои документы</h5>
+        <a href="{% url 'documents:list' %}" class="btn btn-sm btn-outline-primary">Все документы</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Тип</th>
+                        <th>Номер</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                        <th>Скачать</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in client_documents %}
+                    <tr>
+                        <td>
+                            {% if doc.doc_type == 'proposal' %}<i class="fas fa-file-alt text-info me-1"></i>
+                            {% elif doc.doc_type == 'contract' %}<i class="fas fa-file-contract text-primary me-1"></i>
+                            {% elif doc.doc_type == 'act' %}<i class="fas fa-file-signature text-success me-1"></i>
+                            {% elif doc.doc_type == 'invoice' %}<i class="fas fa-file-invoice-dollar text-warning me-1"></i>
+                            {% endif %}{{ doc.get_doc_type_display }}
+                        </td>
+                        <td><a href="{% url 'documents:detail' doc.pk %}">{{ doc.number }}</a></td>
+                        <td>{{ doc.amount|floatformat:0 }} ₽</td>
+                        <td><span class="badge bg-{% if doc.status == 'signed' %}success{% elif doc.status == 'issued' %}info{% else %}secondary{% endif %}">{{ doc.get_status_display }}</span></td>
+                        <td>
+                            <a href="{% url 'documents:download' doc.pk %}" class="btn btn-sm btn-outline-primary py-0 px-1" title="Word">
+                                <i class="fas fa-file-word"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Последние заявки -->
+<div class="card glass-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Последние заявки</h5>
+        <a href="{% url 'requests_app:my_requests' %}" class="btn btn-sm btn-outline-primary">Все заявки</a>
+    </div>
+    <div class="card-body p-0">
+        {% if requests %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Название</th>
+                            <th>Услуга</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td><strong>#{{ req.pk }}</strong></td>
+                            <td>{{ req.title|truncatechars:40 }}</td>
+                            <td>{{ req.get_service_type_display }}</td>
+                            <td>
+                                <span class="badge bg-{{ req.status_color }}">
+                                    {{ req.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ req.created_at|date:"d.m.Y" }}</td>
+                            <td>
+                                <a href="{% url 'requests_app:request_detail' req.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted mb-3">У вас пока нет заявок</p>
+                <a href="{% url 'requests_app:create_request' %}" class="btn btn-liquid">
+                    <i class="fas fa-plus me-1"></i>Создать первую заявку
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

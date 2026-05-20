@@ -1,0 +1,36 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block dashboard_title %}<i class="fas fa-folder-open me-2"></i>Документы{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'proposals:list' %}"><i class="fas fa-file-signature me-2"></i>КП</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'contracts:list' %}"><i class="fas fa-file-contract me-2"></i>Договоры</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'documents:list' %}"><i class="fas fa-folder-open me-2"></i>Документы</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="card glass-card animate__animated animate__fadeInUp">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light"><tr><th>Номер</th><th>Тип</th><th>Заявка</th><th>Сумма</th><th>Статус</th><th>Скачать</th><th></th></tr></thead>
+            <tbody>
+            {% for doc in documents %}
+                <tr>
+                    <td class="fw-semibold">{{ doc.number }}</td>
+                    <td>{{ doc.get_doc_type_display }}</td>
+                    <td>#{{ doc.request.pk }}</td>
+                    <td>{{ doc.amount|floatformat:2 }} ₽</td>
+                    <td><span class="badge bg-{% if doc.status == 'paid' or doc.status == 'signed' %}success{% elif doc.status == 'cancelled' %}danger{% else %}secondary{% endif %}">{{ doc.get_status_display }}</span></td>
+                    <td class="text-nowrap">
+                        <a href="{% url 'documents:download' doc.pk %}" class="btn btn-sm btn-outline-primary" title="Word"><i class="fas fa-file-word"></i></a>
+                    </td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="{% url 'documents:detail' doc.pk %}">Открыть</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Документы пока не сформированы</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

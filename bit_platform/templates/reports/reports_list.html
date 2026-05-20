@@ -1,0 +1,134 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block dashboard_title %}
+<i class="fas fa-file-alt me-2"></i>Мои отчёты
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'reports:list' %}">
+        <i class="fas fa-file-alt me-2"></i>Отчёты
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_actions %}
+<a href="{% url 'reports:create' %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus me-1"></i>Создать отчёт
+</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-12">
+        {% if reports %}
+        <div class="row g-4">
+            {% for report in reports %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="report-icon me-3">
+                                {% if report.report_type == 'requests' %}
+                                    <i class="fas fa-file-invoice text-primary"></i>
+                                {% elif report.report_type == 'projects' %}
+                                    <i class="fas fa-project-diagram text-success"></i>
+                                {% elif report.report_type == 'tasks' %}
+                                    <i class="fas fa-tasks text-warning"></i>
+                                {% elif report.report_type == 'financial' %}
+                                    <i class="fas fa-dollar-sign text-info"></i>
+                                {% else %}
+                                    <i class="fas fa-file-alt text-secondary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ report.name }}</h6>
+                                <small class="text-muted">{{ report.get_report_type_display }}</small>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'reports:detail' report.pk %}">
+                                        <i class="fas fa-eye me-2"></i>Просмотреть
+                                    </a></li>
+                                    {% if report.file %}
+                                    <li><a class="dropdown-item" href="{{ report.file.url }}" download>
+                                        <i class="fas fa-download me-2"></i>Скачать
+                                    </a></li>
+                                    {% endif %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="post" action="{% url 'reports:delete' report.pk %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="dropdown-item text-danger" 
+                                                    onclick="return confirm('Удалить отчёт?')">
+                                                <i class="fas fa-trash me-2"></i>Удалить
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        {% if report.description %}
+                        <p class="text-muted small mb-3">{{ report.description|truncatechars:100 }}</p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center text-muted small">
+                            <span>
+                                {% if report.date_from and report.date_to %}
+                                    {{ report.date_from|date:"d.m.Y" }} - {{ report.date_to|date:"d.m.Y" }}
+                                {% else %}
+                                    Все данные
+                                {% endif %}
+                            </span>
+                            <span>{{ report.created_at|date:"d.m.Y" }}</span>
+                        </div>
+                    </div>
+                    {% if report.file %}
+                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                        <a href="{{ report.file.url }}" class="btn btn-outline-primary btn-sm w-100" download>
+                            <i class="fas fa-download me-2"></i>Скачать {{ report.file_format|upper }}
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card shadow-sm border-0">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">Нет отчётов</h5>
+                <p class="text-muted mb-4">Создайте свой первый отчёт для анализа данных</p>
+                <a href="{% url 'reports:create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Создать отчёт
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.report-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--surface);
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+</style>
+{% endblock %}

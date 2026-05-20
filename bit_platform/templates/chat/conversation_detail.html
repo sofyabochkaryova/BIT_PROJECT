@@ -1,0 +1,785 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+/* ═══════════════════════════════════════════
+   CHAT DETAIL — Modern Messenger Design
+   ═══════════════════════════════════════════ */
+
+.chat-wrapper {
+    height: calc(100vh - 160px);
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 32px rgba(100, 100, 140, 0.10);
+}
+
+/* ── Header ── */
+.chat-header {
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #7c5cfc 0%, #8d73ff 50%, #9e8aff 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.ch-back {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .2s;
+    text-decoration: none;
+}
+.ch-back:hover { background: rgba(255,255,255,.25); color: #fff; }
+
+.ch-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,.3);
+}
+.ch-avatar-ph {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,.3);
+}
+
+.ch-info { flex: 1; min-width: 0; }
+.ch-name { font-weight: 700; font-size: 15px; margin: 0; line-height: 1.3; }
+.ch-role { font-size: 12px; opacity: .8; }
+
+.ch-menu-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    cursor: pointer;
+    transition: background .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ch-menu-btn:hover { background: rgba(255,255,255,.25); }
+
+.participants-panel {
+    display: none;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    padding: 12px 16px;
+}
+
+.participants-panel.open {
+    display: block;
+}
+
+/* ── Messages Area ── */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--bg);
+    scroll-behavior: smooth;
+}
+
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: #d4d6e4; border-radius: 3px; }
+.chat-messages::-webkit-scrollbar-thumb:hover { background: #b0b3c4; }
+
+/* Date divider */
+.date-sep {
+    display: flex;
+    align-items: center;
+    margin: 16px 0;
+    gap: 12px;
+}
+.date-sep::before, .date-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+.date-sep span {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    background: var(--bg);
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+}
+
+/* ── Message Wrapper ── */
+.msg {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    max-width: 75%;
+    animation: msgIn .25s ease;
+}
+
+@keyframes msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.me {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+.msg.other {
+    align-self: flex-start;
+}
+
+/* Avatar */
+.msg-av {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    object-fit: cover;
+}
+.msg-av-ph {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e0dbff, #cdc4ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--purple);
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.msg.me .msg-av-ph,
+.msg.me .msg-av { visibility: hidden; width: 0; margin: 0; }
+
+/* Bubble */
+.msg-body { min-width: 0; }
+
+.msg-author {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--purple);
+    margin-bottom: 4px;
+    margin-left: 14px;
+    display: inline-block;
+    background: rgba(141,115,255,.08);
+    padding: 1px 10px;
+    border-radius: 8px;
+    letter-spacing: .01em;
+}
+.msg.me .msg-author {
+    color: #9ea3b5;
+    background: rgba(100,110,140,.06);
+    margin-left: 0;
+    margin-right: 14px;
+    text-align: right;
+}
+
+.msg-bubble {
+    padding: 10px 16px;
+    border-radius: 18px;
+    position: relative;
+    word-wrap: break-word;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.msg.other .msg-bubble {
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+
+.msg.me .msg-bubble {
+    background: linear-gradient(135deg, #7c5cfc, #9178ff);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    box-shadow: 0 2px 8px rgba(124,92,252,.25);
+}
+
+.msg-text {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.msg-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 0 4px;
+}
+.msg.other .msg-meta { justify-content: flex-start; }
+.msg.me .msg-meta { justify-content: flex-end; }
+
+.msg-time {
+    font-size: 11px;
+    color: var(--muted);
+}
+.msg.me .msg-time { color: #9ea3b5; }
+.msg.me .msg-meta .msg-edited { color: #9ea3b5; }
+.msg.me .msg-meta .msg-check { color: #c0c4d0; }
+.msg.me .msg-meta .msg-check.read { color: var(--purple); }
+
+.msg-edited { font-size: 10px; color: var(--muted); }
+.msg-check { font-size: 11px; color: #c0c4d0; }
+.msg-check.read { color: var(--purple); }
+
+/* Image in message */
+.msg-image {
+    max-width: 280px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform .2s;
+    display: block;
+    margin-bottom: 4px;
+}
+.msg-image:hover { transform: scale(1.02); }
+
+/* File in message */
+.msg-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(141,115,255,.08);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 4px;
+    transition: background .2s;
+}
+.msg-file:hover { background: rgba(141,115,255,.14); }
+.msg.me .msg-file { background: rgba(255,255,255,.15); color: #fff; }
+.msg.me .msg-file:hover { background: rgba(255,255,255,.22); }
+
+.msg-file-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--purple);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+
+
+/* ── Empty state ── */
+.chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: var(--muted);
+    gap: 8px;
+    padding: 40px;
+}
+.chat-empty i { font-size: 48px; opacity: .3; }
+.chat-empty h6 { margin: 0; font-size: 16px; color: var(--text); }
+.chat-empty p { margin: 0; font-size: 13px; }
+
+/* ── Input Area ── */
+.chat-input-area {
+    padding: 14px 20px;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    flex-shrink: 0;
+}
+
+.ci-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.ci-field {
+    flex: 1;
+    position: relative;
+}
+
+.ci-textarea {
+    width: 100%;
+    border: 2px solid var(--line);
+    border-radius: 24px;
+    padding: 10px 80px 10px 18px;
+    resize: none;
+    max-height: 120px;
+    min-height: 44px;
+    line-height: 1.5;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface-2);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.ci-textarea::placeholder { color: #a0a4b4; }
+.ci-textarea:focus {
+    outline: none;
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(141,115,255,.12);
+    background: #fff;
+}
+
+.ci-actions {
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    display: flex;
+    gap: 2px;
+}
+
+.ci-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    font-size: 14px;
+}
+.ci-action-btn:hover {
+    background: rgba(141,115,255,.1);
+    color: var(--purple);
+}
+
+.ci-send {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #7c5cfc, #9178ff);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+    box-shadow: 0 3px 12px rgba(124,92,252,.3);
+    flex-shrink: 0;
+}
+.ci-send:hover { transform: scale(1.05); box-shadow: 0 5px 18px rgba(124,92,252,.4); }
+.ci-send:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* File preview */
+.ci-file-preview {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    margin-bottom: 8px;
+    background: rgba(141,115,255,.06);
+    border: 1px solid rgba(141,115,255,.15);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--text);
+}
+.ci-file-preview.visible { display: flex; }
+.ci-file-preview i { color: var(--purple); }
+.ci-file-preview span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ci-file-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 14px;
+}
+.ci-file-remove:hover { color: #ef4444; }
+
+/* Typing indicator */
+.typing-bar {
+    display: none;
+    padding: 6px 24px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+}
+.typing-bar .dot-anim span {
+    animation: dotBounce 1.4s infinite ease-in-out;
+    display: inline-block;
+    font-size: 18px;
+    line-height: 1;
+}
+.typing-bar .dot-anim span:nth-child(1) { animation-delay: 0s; }
+.typing-bar .dot-anim span:nth-child(2) { animation-delay: .2s; }
+.typing-bar .dot-anim span:nth-child(3) { animation-delay: .4s; }
+@keyframes dotBounce {
+    0%,80%,100% { transform: translateY(0); }
+    40% { transform: translateY(-4px); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chat-wrapper { height: calc(100vh - 120px); border-radius: 0; }
+    .chat-header { padding: 12px 14px; }
+    .chat-messages { padding: 14px; }
+    .msg { max-width: 88%; }
+    .chat-input-area { padding: 10px 12px; }
+}
+</style>
+{% endblock %}
+
+{% block dashboard_title %}{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'chat:list' %}">
+        <i class="fas fa-comments me-2"></i>Сообщения
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'notifications:list' %}">
+        <i class="fas fa-bell me-2"></i>Уведомления
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="chat-wrapper">
+    <!-- ── Header ── -->
+    <div class="chat-header">
+        <a href="{% url 'chat:list' %}" class="ch-back" title="Назад">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+
+        {% if other_participant %}
+            {% if other_participant.profile.avatar %}
+                <img src="{{ other_participant.profile.avatar.url }}" class="ch-avatar" alt="">
+            {% else %}
+                <div class="ch-avatar-ph">{{ other_participant.username|first|upper }}</div>
+            {% endif %}
+        {% else %}
+            <div class="ch-avatar-ph"><i class="fas fa-users" style="font-size:16px"></i></div>
+        {% endif %}
+
+        <div class="ch-info">
+            <div class="ch-name">
+                {% if conversation.title %}
+                    {{ conversation.title }}
+                {% elif other_participant %}
+                    {{ other_participant.get_full_name|default:other_participant.username }}
+                {% else %}
+                    Групповой чат
+                {% endif %}
+            </div>
+            <div class="ch-role">
+                {% if conversation.conversation_type == 'private' and other_participant.profile.role %}
+                    {{ other_participant.profile.get_role_display }}
+                    {% if other_participant.profile.position %} · {{ other_participant.profile.position }}{% endif %}
+                {% elif conversation.conversation_type != 'private' %}
+                    {{ conversation.participants.count }} участников
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="ch-menu-btn" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <button type="button" class="dropdown-item" onclick="toggleParticipantsPanel(); return false;">
+                        <i class="fas fa-users me-2 text-primary"></i>Участники
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="participantsPanel" class="participants-panel">
+        <div class="list-group list-group-flush">
+            {% for p in participants %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">{{ p.display_name }}</div>
+                        <small class="text-muted">@{{ p.username }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-secondary">{{ p.group_label }}</span>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-muted">Участники не найдены.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Messages ── -->
+    <div class="chat-messages" id="chatMessages">
+        {% for message in chat_messages %}
+            <div class="msg {% if message.author == request.user %}me{% else %}other{% endif %}"
+                 data-message-id="{{ message.pk }}">
+
+                {# Avatar (only for others) #}
+                {% if message.author != request.user %}
+                    {% if message.author.profile.avatar %}
+                        <img src="{{ message.author.profile.avatar.url }}" class="msg-av" alt="">
+                    {% else %}
+                        <div class="msg-av-ph">{{ message.author.username|first|upper }}</div>
+                    {% endif %}
+                {% else %}
+                    <div style="width:0"></div>
+                {% endif %}
+
+                <div class="msg-body">
+                    {% if message.author == request.user %}
+                        <div class="msg-author">Вы</div>
+                    {% else %}
+                        <div class="msg-author">{{ message.author.get_full_name|default:message.author.username }}</div>
+                    {% endif %}
+
+                    <div class="msg-bubble">
+                        {% if message.is_image %}
+                            <img src="{{ message.attachment.url }}" class="msg-image"
+                                 onclick="window.open(this.src)" alt="Изображение">
+                        {% elif message.is_file %}
+                            <a href="{{ message.attachment.url }}" target="_blank" class="msg-file">
+                                <div class="msg-file-icon"><i class="fas fa-file"></i></div>
+                                <div>
+                                    <div style="font-weight:600;font-size:13px">{{ message.file_name }}</div>
+                                    <small style="opacity:.7">Скачать</small>
+                                </div>
+                            </a>
+                        {% endif %}
+                        {% if message.text %}
+                            <p class="msg-text">{{ message.text }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="msg-meta">
+                        <span class="msg-time">{{ message.created_at|time:"H:i" }}</span>
+                        {% if message.is_edited %}
+                            <span class="msg-edited">изм.</span>
+                        {% endif %}
+                        {% if message.author == request.user %}
+                            <i class="fas fa-check{% if message.read_by.count > 0 %}-double read{% endif %} msg-check"></i>
+                        {% endif %}
+                    </div>
+
+
+                </div>
+            </div>
+        {% empty %}
+            <div class="chat-empty">
+                <i class="far fa-comment-dots"></i>
+                <h6>Начните диалог</h6>
+                <p>Напишите первое сообщение</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- ── Typing ── -->
+    <div class="typing-bar" id="typingIndicator">
+        <span class="dot-anim"><span>·</span><span>·</span><span>·</span></span> пишет...
+    </div>
+
+    <!-- ── Input ── -->
+    <div class="chat-input-area">
+        <form id="messageForm" method="post" action="{% url 'chat:send_message' conversation.pk %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="ci-file-preview" id="filePreview">
+                <i class="fas fa-paperclip"></i>
+                <span id="fileName"></span>
+                <button type="button" class="ci-file-remove" id="fileRemove"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="ci-wrapper">
+                <div class="ci-field">
+                    <textarea class="ci-textarea" name="text" id="messageInput"
+                              placeholder="Напишите сообщение..." rows="1"></textarea>
+                    <div class="ci-actions">
+                        <input type="file" name="attachment" id="attachmentInput" style="display:none">
+                        <button type="button" class="ci-action-btn" onclick="document.getElementById('attachmentInput').click()" title="Прикрепить файл">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+
+                    </div>
+                </div>
+                <button type="submit" class="ci-send" id="sendBtn" disabled title="Отправить">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function(){
+    const container = document.getElementById('chatMessages');
+    const input = document.getElementById('messageInput');
+    const form = document.getElementById('messageForm');
+    const sendBtn = document.getElementById('sendBtn');
+    const attachInput = document.getElementById('attachmentInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileNameEl = document.getElementById('fileName');
+    const fileRemove = document.getElementById('fileRemove');
+
+    let lastMessageId = 0;
+    {
+        const all = document.querySelectorAll('.msg[data-message-id]');
+        if (all.length) lastMessageId = parseInt(all[all.length - 1].dataset.messageId) || 0;
+    }
+
+    // Auto-resize textarea
+    input.addEventListener('input', function(){
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        sendBtn.disabled = !this.value.trim() && !attachInput.files.length;
+    });
+
+    // Enter to send
+    input.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) form.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // File preview
+    attachInput.addEventListener('change', function(){
+        if (this.files.length) {
+            fileNameEl.textContent = this.files[0].name;
+            filePreview.classList.add('visible');
+            sendBtn.disabled = false;
+        }
+    });
+    fileRemove.addEventListener('click', function(){
+        attachInput.value = '';
+        filePreview.classList.remove('visible');
+        sendBtn.disabled = !input.value.trim();
+    });
+
+    // AJAX submit
+    form.addEventListener('submit', async function(e){
+        e.preventDefault();
+        const fd = new FormData(this);
+        const text = input.value.trim();
+        if (!text && !attachInput.files.length) return;
+
+        input.value = '';
+        input.style.height = 'auto';
+        sendBtn.disabled = true;
+        attachInput.value = '';
+        filePreview.classList.remove('visible');
+
+        try {
+            const r = await fetch(this.action, {
+                method: 'POST', body: fd,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            });
+            const d = await r.json();
+            if (d.success) {
+                appendMessage(d.message, true);
+                lastMessageId = d.message.id;
+                scrollBottom();
+            }
+        } catch(err) { console.error(err); }
+    });
+
+    function appendMessage(m, isOwn){
+        const div = document.createElement('div');
+        div.className = 'msg ' + (isOwn ? 'me' : 'other');
+        div.dataset.messageId = m.id;
+
+        let av = '';
+        if (!isOwn) {
+            av = m.author.avatar
+                ? `<img src="${m.author.avatar}" class="msg-av" alt="">`
+                : `<div class="msg-av-ph">${esc(m.author.name[0]).toUpperCase()}</div>`;
+        } else {
+            av = '<div style="width:0"></div>';
+        }
+
+        let content = '';
+        if (m.is_image) content += `<img src="${m.file_url}" class="msg-image" onclick="window.open(this.src)" alt="">`;
+        else if (m.is_file) content += `<a href="${m.file_url}" target="_blank" class="msg-file"><div class="msg-file-icon"><i class="fas fa-file"></i></div><div><div style="font-weight:600;font-size:13px">${esc(m.file_name)}</div><small style="opacity:.7">Скачать</small></div></a>`;
+        if (m.text) content += `<p class="msg-text">${esc(m.text)}</p>`;
+
+        const authorLabel = isOwn ? '<div class="msg-author">Вы</div>' : `<div class="msg-author">${esc(m.author.name)}</div>`;
+        div.innerHTML = `${av}<div class="msg-body">${authorLabel}<div class="msg-bubble">${content}</div><div class="msg-meta"><span class="msg-time">${m.created_at}</span></div></div>`;
+        container.appendChild(div);
+    }
+
+    function esc(t){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+    function scrollBottom(){ container.scrollTop = container.scrollHeight; }
+
+    const participantsPanel = document.getElementById('participantsPanel');
+    window.toggleParticipantsPanel = function() {
+        if (!participantsPanel) return;
+        participantsPanel.classList.toggle('open');
+    }
+
+    // Polling
+    async function poll(){
+        try {
+            const r = await fetch(`{% url 'chat:get_messages' conversation.pk %}?last_id=${lastMessageId}`);
+            const d = await r.json();
+            if (d.messages && d.messages.length) {
+                d.messages.forEach(m => {
+                    if (!m.author.is_me) appendMessage(m, false);
+                    if (m.id > lastMessageId) lastMessageId = m.id;
+                });
+                scrollBottom();
+            }
+        } catch(e){}
+    }
+    setInterval(poll, 3000);
+
+    // Scroll to bottom on load
+    scrollBottom();
+})();
+</script>
+{% endblock %}

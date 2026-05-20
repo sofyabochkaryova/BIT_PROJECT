@@ -1,0 +1,206 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}Сотрудники — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'requests_app:all_requests' %}">
+        <i class="fas fa-inbox me-2"></i>Все заявки
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:all_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Диспетчер задач
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'projects:my_projects' %}">
+        <i class="fas fa-folder me-2"></i>Проекты
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'accounts:staff_list' %}">
+        <i class="fas fa-users me-2"></i>Сотрудники
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}Сотрудники{% endblock %}
+
+{% block dashboard_content %}
+<style>
+.staff-card{border:none;border-radius:16px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.staff-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.12)!important}
+.staff-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #e0e7ff}
+.staff-avatar-placeholder{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:700;flex-shrink:0}
+.staff-role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.staff-role-badge.analyst{background:#dbeafe;color:#1d4ed8}
+.staff-role-badge.executor{background:#dcfce7;color:#16a34a}
+.skill-pill{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;margin:2px;font-weight:500}
+.skill-pill.level-1{background:#f1f5f9;color:#64748b}
+.skill-pill.level-2{background:#e0e7ff;color:#4338ca}
+.skill-pill.level-3{background:#dbeafe;color:#1d4ed8}
+.skill-pill.level-4{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.staff-stat{text-align:center;padding:8px}
+.staff-stat .val{font-size:20px;font-weight:700;color:#1e293b}
+.staff-stat .lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.filter-bar{background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:24px}
+.summary-num{font-size:28px;font-weight:800;color:#4f46e5}
+</style>
+
+<!-- Сводка -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-primary-soft"><i class="fas fa-users"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ total_analysts|add:total_executors }}</div>
+                <div class="stat-card-label">Всего сотрудников</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-info-soft"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ total_analysts }}</div>
+                <div class="stat-card-label">Аналитиков</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-success-soft"><i class="fas fa-cogs"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ total_executors }}</div>
+                <div class="stat-card-label">Исполнителей</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card glass-card">
+            <div class="stat-card-icon bg-warning-soft"><i class="fas fa-list"></i></div>
+            <div class="stat-card-content">
+                <div class="stat-card-value">{{ staff|length }}</div>
+                <div class="stat-card-label">Показано</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="filter-bar d-flex flex-wrap align-items-center gap-3">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center w-100">
+        <div class="input-group" style="max-width:300px">
+            <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Поиск по ФИО, должности…" value="{{ search_q }}">
+        </div>
+        <select name="role" class="form-select" style="max-width:200px">
+            <option value="">Все роли</option>
+            <option value="analyst" {% if role_filter == 'analyst' %}selected{% endif %}>Аналитик</option>
+            <option value="executor" {% if role_filter == 'executor' %}selected{% endif %}>Исполнитель</option>
+        </select>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-filter me-1"></i>Фильтр
+        </button>
+        {% if search_q or role_filter %}
+        <a href="{% url 'accounts:staff_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-times me-1"></i>Сбросить
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Карточки сотрудников -->
+{% if staff %}
+<div class="row g-4">
+    {% for s in staff %}
+    <div class="col-md-6 col-xl-4">
+        <div class="card staff-card glass-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    {% if s.profile.avatar %}
+                        <img src="{{ s.profile.avatar.url }}" class="staff-avatar me-3" alt="">
+                    {% else %}
+                        <div class="staff-avatar-placeholder me-3">
+                            {{ s.user.first_name|first }}{{ s.user.last_name|first }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <h6 class="mb-1 fw-bold">
+                            {{ s.user.get_full_name|default:s.user.username }}
+                        </h6>
+                        <span class="staff-role-badge {{ s.profile.role }}">
+                            {{ s.profile.get_role_display }}
+                        </span>
+                        {% if s.profile.position %}
+                            <div class="text-muted mt-1" style="font-size:12px">
+                                <i class="fas fa-briefcase me-1"></i>{{ s.profile.position }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Контакты -->
+                <div class="mb-3" style="font-size:12px;color:#64748b">
+                    {% if s.user.email %}
+                        <div><i class="fas fa-envelope me-2 text-primary"></i>{{ s.user.email }}</div>
+                    {% endif %}
+                    {% if s.profile.phone %}
+                        <div><i class="fas fa-phone me-2 text-success"></i>{{ s.profile.phone }}</div>
+                    {% endif %}
+                    {% if s.profile.telegram %}
+                        <div><i class="fab fa-telegram me-2 text-info"></i>{{ s.profile.telegram }}</div>
+                    {% endif %}
+                    {% if s.profile.department %}
+                        <div><i class="fas fa-building me-2 text-secondary"></i>{{ s.profile.department }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Навыки -->
+                {% if s.skills %}
+                <div class="mb-3">
+                    <small class="text-muted fw-bold text-uppercase" style="font-size:10px;letter-spacing:.5px">Навыки</small>
+                    <div class="mt-1">
+                        {% for us in s.skills %}
+                            <span class="skill-pill level-{{ us.level }}" title="{{ us.get_level_display }}">
+                                {{ us.skill.name }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Статистика задач -->
+                <div class="d-flex justify-content-around border-top pt-3">
+                    <div class="staff-stat">
+                        <div class="val">{{ s.total_tasks }}</div>
+                        <div class="lbl">Всего</div>
+                    </div>
+                    <div class="staff-stat">
+                        <div class="val text-primary">{{ s.active_tasks }}</div>
+                        <div class="lbl">Активных</div>
+                    </div>
+                    <div class="staff-stat">
+                        <div class="val text-success">{{ s.done_tasks }}</div>
+                        <div class="lbl">Завершено</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">Сотрудники не найдены</h5>
+    <p class="text-muted">Попробуйте изменить параметры фильтра</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,470 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+}
+
+.conversation-list {
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.conversation-item:hover {
+    background: var(--surface-hover);
+}
+
+.conversation-item.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+    border-left: 3px solid var(--primary);
+}
+
+.conversation-main-link {
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+
+.conversation-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.conversation-avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.conversation-preview {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.unread-badge {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.new-chat-btn {
+    border: 2px dashed var(--line);
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.new-chat-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    padding-left: 2.5rem;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+/* Защита от залипания оверлея модалки */
+.modal {
+    z-index: 2000;
+}
+
+.modal-backdrop {
+    z-index: 1990;
+}
+
+.modal-backdrop.show {
+    opacity: 0.35;
+}
+</style>
+{% endblock %}
+
+{% block dashboard_title %}
+<i class="fas fa-comments me-2"></i>Сообщения
+{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'chat:list' %}">
+        <i class="fas fa-comments me-2"></i>Сообщения
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'notifications:list' %}">
+        <i class="fas fa-bell me-2"></i>Уведомления
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_actions %}
+{% if can_create_group %}
+<button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newChatModal">
+    <i class="fas fa-plus me-1"></i>Новый чат
+</button>
+<button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newGroupModal">
+    <i class="fas fa-users me-1"></i>Новая группа
+</button>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <!-- Поиск -->
+                <div class="p-3 border-bottom">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control" placeholder="Поиск по диалогам..." id="searchConversations">
+                    </div>
+                </div>
+                
+                <!-- Список диалогов -->
+                <div class="conversation-list" id="conversationList">
+                    {% if conversations %}
+                        {% for item in conversations %}
+                        <div class="conversation-item d-flex align-items-center gap-2">
+                            <a href="{% url 'chat:conversation' item.conversation.pk %}" class="conversation-main-link d-flex align-items-center flex-grow-1">
+                            <div class="me-3">
+                                {% if item.other_participant %}
+                                    {% if item.other_participant.profile.avatar %}
+                                        <img src="{{ item.other_participant.profile.avatar.url }}" 
+                                             alt="" class="conversation-avatar">
+                                    {% else %}
+                                        <div class="conversation-avatar-placeholder">
+                                            {{ item.other_participant.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="conversation-avatar-placeholder">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1 min-width-0">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="mb-0 text-truncate {% if item.unread_count > 0 %}fw-bold{% endif %}">
+                                        {% if item.conversation.title %}
+                                            {{ item.conversation.title }}
+                                        {% elif item.other_participant %}
+                                            {{ item.other_participant.get_full_name|default:item.other_participant.username }}
+                                        {% else %}
+                                            Групповой чат
+                                        {% endif %}
+                                    </h6>
+                                    <span class="conversation-time">
+                                        {% if item.last_message %}
+                                            {{ item.last_message.created_at|timesince }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="conversation-preview mb-0">
+                                        {% if item.last_message %}
+                                            {% if item.last_message.author == request.user %}Вы: {% endif %}
+                                            {{ item.last_message.text|truncatechars:50 }}
+                                        {% else %}
+                                            <em>Нет сообщений</em>
+                                        {% endif %}
+                                    </p>
+                                    {% if item.unread_count > 0 %}
+                                        <span class="unread-badge">{{ item.unread_count }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            </a>
+                            <form method="post" action="{% url 'chat:delete_conversation' item.conversation.pk %}" onsubmit="return confirm('Удалить этот чат?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить чат">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        {% if is_client %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">Нет диалогов</h5>
+                            <p class="text-muted mb-3">Вы можете начать чат с аналитиком на странице заявки</p>
+                            <a href="{% url 'requests_app:list' %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-right me-2"></i>Перейти к заявкам
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">Нет диалогов</h5>
+                            <p class="text-muted mb-3">Начните общение, нажав кнопку "Новый чат"</p>
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newChatModal">
+                                <i class="fas fa-plus me-2"></i>Начать чат
+                            </button>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно нового чата -->
+<div class="modal fade" id="newChatModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Начать новый диалог</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'chat:start_post' %}" class="mb-3">
+                    {% csrf_token %}
+                    <label class="form-label">Быстрый старт (без поиска)</label>
+                    <div class="d-flex gap-2">
+                        <select name="user_id" class="form-select" required>
+                            <option value="">Выберите пользователя</option>
+                            {% for u in chat_candidates %}
+                                <option value="{{ u.id }}">{{ u.display_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Открыть</button>
+                    </div>
+                </form>
+                <hr>
+                <div class="mb-3">
+                    <label class="form-label">Найти пользователя</label>
+                    <input type="text" class="form-control" id="userSearchInput" 
+                           placeholder="Введите имя или email...">
+                </div>
+                <div id="userSearchResults" class="list-group"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if can_create_group %}
+<div class="modal fade" id="newGroupModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Создать группу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'chat:create_group' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название группы</label>
+                        <input type="text" name="title" class="form-control" placeholder="Например: Проект CRM — исполнители" required>
+                    </div>
+                    <label class="form-label">Выберите сотрудников</label>
+                    <div class="row g-2" style="max-height:320px; overflow:auto;">
+                        {% for u in group_candidates %}
+                        <div class="col-md-6">
+                            <label class="list-group-item d-flex align-items-center gap-2">
+                                <input type="checkbox" class="form-check-input me-1" name="participants" value="{{ u.id }}">
+                                <span>
+                                    {{ u.display_name }}
+                                    <small class="text-muted d-block">@{{ u.username }}</small>
+                                </span>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <div class="col-12 text-muted small">Сотрудники не найдены.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Создать группу
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatStartUrlTemplate = "{% url 'chat:start' 0 %}";
+    const searchUrl = "{% url 'chat:search_users' %}";
+    const container = document.getElementById('userSearchResults');
+    const searchInput = document.getElementById('userSearchInput');
+
+    function unlockUi() {
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    }
+
+    function safeShowModal(modalId) {
+        unlockUi();
+        const modalEl = document.getElementById(modalId);
+        if (!modalEl) return;
+        const instance = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: false, keyboard: true });
+        instance.show();
+    }
+
+    // Поиск пользователей
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = '<div class="list-group-item text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Поиск...</div>';
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(searchUrl + '?q=' + encodeURIComponent(query));
+                if (!response.ok) {
+                    container.innerHTML = '<div class="list-group-item text-danger">Ошибка загрузки</div>';
+                    return;
+                }
+                const data = await response.json();
+
+                if (!data.users || data.users.length === 0) {
+                    container.innerHTML = '<div class="list-group-item text-muted">Пользователи не найдены</div>';
+                    return;
+                }
+
+                container.innerHTML = data.users.map(user => {
+                    const url = chatStartUrlTemplate.replace('/0/', '/' + user.id + '/');
+                    const initial = user.name ? user.name[0].toUpperCase() : '?';
+                    const avatar = user.avatar
+                        ? '<img src="' + user.avatar + '" class="rounded-circle me-3" style="width:40px;height:40px;object-fit:cover;">'
+                        : '<div class="conversation-avatar-placeholder me-3" style="width:40px;height:40px;font-size:1rem;">' + initial + '</div>';
+                    return '<a href="' + url + '" class="list-group-item list-group-item-action d-flex align-items-center">'
+                        + avatar
+                        + '<div><div class="fw-semibold">' + user.name + '</div>'
+                        + '<small class="text-muted">@' + user.username + '</small></div></a>';
+                }).join('');
+            } catch (err) {
+                console.error('Search error:', err);
+                container.innerHTML = '<div class="list-group-item text-danger">Ошибка соединения</div>';
+            }
+        }, 300);
+    });
+
+    // Фокус на поле поиска при открытии модалки
+    const modal = document.getElementById('newChatModal');
+    if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+            searchInput.focus();
+            searchInput.value = '';
+            container.innerHTML = '';
+        });
+        modal.addEventListener('show.bs.modal', unlockUi);
+        modal.addEventListener('hidden.bs.modal', unlockUi);
+    }
+
+    const groupModal = document.getElementById('newGroupModal');
+    if (groupModal) {
+        groupModal.addEventListener('show.bs.modal', unlockUi);
+        groupModal.addEventListener('hidden.bs.modal', unlockUi);
+    }
+
+    window.addEventListener('pageshow', unlockUi);
+
+    document.querySelectorAll('[data-bs-target="#newChatModal"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            safeShowModal('newChatModal');
+        });
+    });
+
+    document.querySelectorAll('[data-bs-target="#newGroupModal"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            safeShowModal('newGroupModal');
+        });
+    });
+
+    // Поиск по диалогам
+    const searchConv = document.getElementById('searchConversations');
+    if (searchConv) {
+        searchConv.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query) ? 'flex' : 'none';
+            });
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            unlockUi();
+        }
+    });
+});
+</script>
+{% endblock %}

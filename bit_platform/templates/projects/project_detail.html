@@ -1,0 +1,381 @@
+{% extends 'accounts/dashboard_base.html' %}
+
+{% block title %}{{ project.name }} — ООО «БИТ»{% endblock %}
+
+{% block sidebar_menu %}
+{% if is_manager %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:analyst_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:all_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Диспетчер задач
+    </a>
+</li>
+{% else %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'accounts:executor_dashboard' %}">
+        <i class="fas fa-tachometer-alt me-2"></i>Обзор
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'tasks:my_tasks' %}">
+        <i class="fas fa-tasks me-2"></i>Мои задачи
+    </a>
+</li>
+{% endif %}
+<li class="nav-item">
+    <a class="nav-link active" href="{% url 'projects:my_projects' %}">
+        <i class="fas fa-folder me-2"></i>Мои проекты
+    </a>
+</li>
+{% endblock %}
+
+{% block dashboard_title %}{{ project.name }}{% endblock %}
+
+{% block dashboard_actions %}
+{% if is_manager and project.service_request %}
+<a href="{% url 'requests_app:request_detail' project.service_request.pk %}" class="btn btn-outline-secondary btn-sm">
+    <i class="fas fa-file-alt me-1"></i>К заявке
+</a>
+{% endif %}
+{% if can_complete %}
+<form method="post" action="{% url 'projects:complete_project' project.pk %}" class="d-inline" 
+      onsubmit="return confirm('Завершить проект и отправить акт клиенту на подписание?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success btn-sm">
+        <i class="fas fa-check-circle me-1"></i>Завершить и отправить акт
+    </button>
+</form>
+{% endif %}
+{% if can_archive %}
+<form method="post" action="{% url 'projects:archive_project' project.pk %}" class="d-inline"
+      onsubmit="return confirm('Отправить проект в архив? После этого он будет доступен только для просмотра.')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-dark btn-sm">
+        <i class="fas fa-archive me-1"></i>В архив
+    </button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        {# ── Информация о проекте ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Информация о проекте</h5>
+                <span class="badge bg-{{ project.status_color }} fs-6">{{ project.get_status_display }}</span>
+            </div>
+            <div class="card-body">
+                {% if project.description %}
+                <p>{{ project.description|linebreaks }}</p>
+                <hr>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">Клиент</small>
+                        <p class="mb-0 fw-medium">{{ project.client.get_full_name|default:project.client.username }}</p>
+                    </div>
+                    {% if project.manager %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Менеджер проекта</small>
+                        <p class="mb-0 fw-medium">{{ project.manager.get_full_name|default:project.manager.username }}</p>
+                    </div>
+                    {% endif %}
+                    {% if project.service_request %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Заявка</small>
+                        <p class="mb-0">
+                            <a href="{% url 'requests_app:request_detail' project.service_request.pk %}">{{ project.service_request.number }}</a>
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% if project.start_date %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Дата начала</small>
+                        <p class="mb-0">{{ project.start_date|date:"d.m.Y" }}</p>
+                    </div>
+                    {% endif %}
+                    {% if project.end_date %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Дата окончания</small>
+                        <p class="mb-0">{{ project.end_date|date:"d.m.Y" }}</p>
+                    </div>
+                    {% endif %}
+                    {% if project.budget %}
+                    <div class="col-md-6">
+                        <small class="text-muted">Бюджет</small>
+                        <p class="mb-0 fw-medium">{{ project.budget|floatformat:0 }} ₽</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                {# Прогресс #}
+                <div class="mb-0">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Прогресс выполнения</span>
+                        <strong>{{ project.progress }}%</strong>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-{{ project.progress_color }}" style="width: {{ project.progress }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# ── Статистика задач ── #}
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card glass-card text-center py-3">
+                    <div class="fs-3 fw-bold text-primary">{{ total_tasks }}</div>
+                    <small class="text-muted">Всего задач</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card glass-card text-center py-3">
+                    <div class="fs-3 fw-bold text-info">{{ in_progress_tasks }}</div>
+                    <small class="text-muted">В работе</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card glass-card text-center py-3">
+                    <div class="fs-3 fw-bold text-success">{{ done_tasks }}</div>
+                    <small class="text-muted">Выполнено</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card glass-card text-center py-3">
+                    <div class="fs-3 fw-bold text-warning">{{ unassigned_tasks }}</div>
+                    <small class="text-muted">Без исполнителя</small>
+                </div>
+            </div>
+        </div>
+
+        {# ── Задачи проекта ── #}
+        <div class="card glass-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>Задачи проекта</h5>
+                {% if is_manager %}
+                <a href="{% url 'tasks:all_tasks' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>Диспетчер
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Задача</th>
+                                <th>Исполнитель</th>
+                                <th>Приоритет</th>
+                                <th>Статус</th>
+                                <th>Дедлайн</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr class="{% if not task.assignee %}table-warning{% endif %}">
+                                <td>
+                                    <a href="{% url 'tasks:task_detail' task.pk %}" class="text-decoration-none fw-medium">
+                                        {{ task.title|truncatechars:40 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if task.assignee %}
+                                    <span class="small">{{ task.assignee.get_full_name|default:task.assignee.username }}</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Не назначен</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-{{ task.priority_color }}">{{ task.get_priority_display }}</span></td>
+                                <td><span class="badge bg-{{ task.status_color }}">{{ task.get_status_display }}</span></td>
+                                <td>
+                                    {% if task.due_date %}{{ task.due_date|date:"d.m.Y" }}{% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-0">Задач пока нет</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        {# ── Завершение проекта (большая кнопка) ── #}
+        {% if can_complete %}
+        <div class="card glass-card mb-4 border-success">
+            <div class="card-body text-center">
+                <i class="fas fa-flag-checkered fa-2x text-success mb-2"></i>
+                <h6 class="mb-2">Все задачи выполнены!</h6>
+                <p class="text-muted small mb-3">При завершении будут автоматически сформированы акт выполненных работ и счёт, а акт отправлен клиенту на подписание</p>
+                <form method="post" action="{% url 'projects:complete_project' project.pk %}"
+                      onsubmit="return confirm('Завершить проект и сформировать закрывающие документы?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-check-circle me-1"></i>Завершить проект
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% elif is_manager and project.status == 'completed' and not can_archive %}
+        <div class="card glass-card mb-4 border-info">
+            <div class="card-body text-center">
+                <i class="fas fa-archive fa-2x text-info mb-2"></i>
+                <h6 class="mb-2">Архивация проекта</h6>
+                <p class="text-muted small mb-2">Для отправки в архив требуется закрыть документы:</p>
+                <div class="small text-start mx-auto" style="max-width: 320px;">
+                    <div class="d-flex justify-content-between">
+                        <span>Акт:</span>
+                        <strong class="{% if closing_docs.act_ok %}text-success{% else %}text-warning{% endif %}">
+                            {% if closing_docs.act_ok %}подписан{% else %}ожидает подписи{% endif %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Счёт:</span>
+                        <strong class="{% if closing_docs.invoice_ok %}text-success{% else %}text-warning{% endif %}">
+                            {% if closing_docs.invoice_ok %}оплачен{% else %}ожидает оплаты{% endif %}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% elif is_manager and project.status == 'archived' %}
+        <div class="card glass-card mb-4 border-dark">
+            <div class="card-body text-center">
+                <i class="fas fa-box-archive fa-2x text-dark mb-2"></i>
+                <h6 class="mb-1">Проект в архиве</h6>
+                <p class="text-muted small mb-0">Проект логически завершён и переведён в архивный фонд.</p>
+            </div>
+        </div>
+        {% elif is_manager and unassigned_tasks > 0 and project.status != 'completed' and project.status != 'archived' and project.status != 'cancelled' and project.status != 'on_hold' %}
+        <div class="card glass-card mb-4 border-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-2"></i>
+                <h6 class="mb-2">Не все задачи назначены</h6>
+                <p class="text-muted small mb-0">{{ unassigned_tasks }} задач(а) без исполнителя. Назначьте исполнителей для продолжения.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Документы проекта ── #}
+        {% if project_documents %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Документы</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for doc in project_documents %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none fw-medium">
+                                {% if doc.doc_type == 'act' %}
+                                    <i class="fas fa-file-check text-success me-1"></i>
+                                {% elif doc.doc_type == 'invoice' %}
+                                    <i class="fas fa-file-invoice-dollar text-info me-1"></i>
+                                {% elif doc.doc_type == 'contract' %}
+                                    <i class="fas fa-file-contract text-primary me-1"></i>
+                                {% elif doc.doc_type == 'proposal' %}
+                                    <i class="fas fa-file-alt text-secondary me-1"></i>
+                                {% endif %}
+                                {{ doc.get_doc_type_display }}
+                            </a>
+                            <br><small class="text-muted">{{ doc.number }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{% if doc.status == 'paid' %}success{% elif doc.status == 'signed' %}primary{% elif doc.status == 'issued' %}info{% elif doc.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                {{ doc.get_status_display }}
+                            </span>
+                            <div class="mt-1">
+                                <a href="{% url 'documents:download' doc.pk %}" class="btn btn-outline-primary btn-sm py-0 px-1" title="Скачать Word">
+                                    <i class="fas fa-file-word"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Управление статусом (менеджер/аналитик) ── #}
+        {% if is_manager %}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Статус проекта</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_status">
+                    <div class="d-grid gap-2">
+                        {% for value, label in statuses %}
+                        <button type="submit" name="status" value="{{ value }}"
+                                class="btn btn-{% if project.status == value %}primary{% else %}outline-secondary{% endif %} btn-sm">
+                            {{ label }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── Команда ── #}
+        <div class="card glass-card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-users me-2"></i>Команда проекта</h6>
+            </div>
+            <div class="card-body">
+                {% if project.team.all %}
+                <ul class="list-unstyled mb-0">
+                    {% for member in project.team.all %}
+                    <li class="d-flex align-items-center mb-2">
+                        <div class="avatar-sm me-2 avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <span class="fw-medium">{{ member.get_full_name|default:member.username }}</span>
+                            {% if member.profile %}
+                            <br><small class="text-muted">{{ member.profile.get_role_display }}</small>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted mb-0 text-center">Команда не назначена</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Информация ── #}
+        <div class="card glass-card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Даты</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Создан:</strong> {{ project.created_at|date:"d.m.Y H:i" }}</p>
+                <p class="mb-0"><strong>Обновлён:</strong> {{ project.updated_at|date:"d.m.Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

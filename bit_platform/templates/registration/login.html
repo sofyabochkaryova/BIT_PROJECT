@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход — ООО «БИТ»{% endblock %}
+
+{% block content %}
+<section class="section auth-section">
+    <div class="container auth-box reveal is-visible">
+        <h1>Вход</h1>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-liquid">Войти</button>
+        </form>
+        <p class="note">Нет аккаунта? <a href="{% url 'accounts:register' %}">Зарегистрируйтесь</a></p>
+    </div>
+</section>
+{% endblock %}

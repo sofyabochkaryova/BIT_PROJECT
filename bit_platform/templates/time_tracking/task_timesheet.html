@@ -1,0 +1,45 @@
+{% extends 'accounts/dashboard_base.html' %}
+{% block title %}Табель — {{ task.title }}{% endblock %}
+{% block dashboard_title %}<i class="fas fa-table me-2"></i>Табель по задаче{% endblock %}
+
+{% block sidebar_menu %}
+<li class="nav-item"><a class="nav-link" href="{% url 'tasks:task_detail' task.pk %}"><i class="fas fa-arrow-left me-2"></i>К задаче</a></li>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="card glass-card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">{{ task.title|truncatechars:50 }}</h5>
+        <div>
+            <span class="badge bg-primary me-1">{{ total|floatformat:1 }} ч факт</span>
+            <span class="badge bg-secondary">{{ task.estimated_hours|floatformat:1|default:"—" }} ч план</span>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Дата</th>
+                        <th>Исполнитель</th>
+                        <th class="text-center">Часы</th>
+                        <th>Что сделано</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in entries %}
+                    <tr>
+                        <td>{{ e.date|date:"d.m.Y" }}</td>
+                        <td>{{ e.user.get_full_name|default:e.user.username }}</td>
+                        <td class="text-center fw-bold">{{ e.hours }}</td>
+                        <td>{{ e.description|truncatechars:80 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">Записей нет</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
