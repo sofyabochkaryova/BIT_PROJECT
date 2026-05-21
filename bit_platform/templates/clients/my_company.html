@@ -134,37 +134,7 @@
                 </div>
             </div>
 
-            {# Печать и подпись #}
-            <div class="card glass-card mb-3">
-                <div class="card-header"><h6 class="mb-0"><i class="fas fa-stamp me-2"></i>Печать и подпись для документов</h6></div>
-                <div class="card-body">
-                    <div class="alert alert-info small mb-3">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Загрузите изображения печати и подписи руководителя (PNG с прозрачным фоном). 
-                        Они будут подставляться в генерируемые документы (КП, Договор, Акт).
-                    </div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Печать организации</label>
-                            {% if company and company.stamp_image %}
-                            <div class="mb-2">
-                                <img src="{{ company.stamp_image.url }}" alt="Печать" style="max-height: 80px;" class="border rounded p-1">
-                            </div>
-                            {% endif %}
-                            <input class="form-control" type="file" name="stamp_image" accept="image/png,image/jpeg">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Подпись руководителя</label>
-                            {% if company and company.signature_image %}
-                            <div class="mb-2">
-                                <img src="{{ company.signature_image.url }}" alt="Подпись" style="max-height: 80px;" class="border rounded p-1">
-                            </div>
-                            {% endif %}
-                            <input class="form-control" type="file" name="signature_image" accept="image/png,image/jpeg">
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
 
             <div class="d-flex justify-content-end">
                 <button class="btn btn-primary btn-lg px-5">
@@ -185,7 +155,6 @@
                     <li class="mb-2"><i class="fas fa-file-invoice text-primary me-2"></i>Счета на оплату</li>
                     <li class="mb-2"><i class="fas fa-file-check text-primary me-2"></i>Акты выполненных работ</li>
                 </ul>
-                <p class="text-muted">Печать и подпись будут встроены прямо в документы.</p>
             </div>
         </div>
     </div>
