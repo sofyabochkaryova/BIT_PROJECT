@@ -242,13 +242,15 @@ def adapt_to_budget(stages, total, budget_from=None, budget_to=None):
     for s in stages:
         new_hours = round(s['hours'] * hours_ratio, 1)
         new_price = s['unit_price']
-        line = round(new_hours * new_price, 0)
+        # Вычисляем итого с правильной точностью (2 знака после запятой)
+        line = Decimal(str(new_hours)) * Decimal(str(new_price))
+        line = float(round(line, 2))
         adj_total += Decimal(str(line))
         adjusted.append({
             **s,
             'hours': new_hours,
             'unit_price': new_price,
-            'total': float(line),
+            'total': line,
         })
 
     # 2. Если всё равно не влезли — уменьшаем ставку
@@ -258,11 +260,14 @@ def adapt_to_budget(stages, total, budget_from=None, budget_to=None):
         price_ratio = max(price_ratio, 0.5)  # не ниже 50% от исходной ставки
         adj_total = Decimal('0')
         for i, s in enumerate(adjusted):
-            new_price = round(s['unit_price'] * price_ratio, 0)
-            line = round(s['hours'] * new_price, 0)
+            # Округляем ставку с точностью до копеек (2 знака)
+            new_price = float(round(Decimal(str(s['unit_price'])) * Decimal(str(price_ratio)), 2))
+            # Вычисляем итого как часы × новая ставка
+            line = Decimal(str(s['hours'])) * Decimal(str(new_price))
+            line = float(round(line, 2))
             adj_total += Decimal(str(line))
             adjusted[i]['unit_price'] = new_price
-            adjusted[i]['total'] = float(line)
+            adjusted[i]['total'] = line
 
     savings_pct = round((1 - float(adj_total) / total) * 100, 1) if total > 0 else 0
     return adjusted, float(adj_total), savings_pct

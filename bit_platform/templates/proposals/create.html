@@ -127,20 +127,33 @@
 </div>
 
 <script>
+// Функция для пересчёта итого в строке: часы × ставка
+function recalculateRowTotal(row) {
+    const hours = parseFloat(row.querySelector('.stage-hours').value) || 0;
+    const rate = parseFloat(row.querySelector('.stage-rate').value) || 0;
+    row.querySelector('.stage-total').value = (hours * rate).toFixed(2);
+}
+
+// Пересчитываем все итого при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.item-row').forEach(row => {
+        recalculateRowTotal(row);
+    });
+});
+
 document.addEventListener('click', function(e) {
     if (e.target.closest('.remove-item')) {
         const rows = document.querySelectorAll('.item-row');
         if (rows.length > 1) e.target.closest('.item-row').remove();
     }
 });
-// Авто-расчёт итого = часы × ставка
+
+// Авто-расчёт итого = часы × ставка при редактировании
 document.addEventListener('input', function(e) {
     if (e.target.classList.contains('stage-hours') || e.target.classList.contains('stage-rate')) {
         const row = e.target.closest('.item-row');
         if (!row) return;
-        const hours = parseFloat(row.querySelector('.stage-hours').value) || 0;
-        const rate = parseFloat(row.querySelector('.stage-rate').value) || 0;
-        row.querySelector('.stage-total').value = (hours * rate).toFixed(2);
+        recalculateRowTotal(row);
     }
 });
 </script>
