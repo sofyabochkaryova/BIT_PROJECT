@@ -186,9 +186,11 @@ def estimate_stages(service_request):
 
     if template and raw_stages:
         for idx, stage in enumerate(raw_stages, 1):
-            hours = stage.default_hours
-            price = stage.default_unit_price
+            hours = Decimal(str(stage.default_hours))
+            price = Decimal(str(stage.default_unit_price))
+            # Вычисляем итого как часы × ставка с точностью 2 знака
             line_total = hours * price
+            line_total = Decimal(str(round(float(line_total), 2)))
             total += line_total
             result.append({
                 'order': idx,
@@ -202,21 +204,25 @@ def estimate_stages(service_request):
             })
     else:
         for idx, s in enumerate(raw_stages, 1):
-            hours = s['hours']
-            price = s['price']
-            line_total = Decimal(str(hours)) * Decimal(str(price))
+            hours = Decimal(str(s['hours']))
+            price = Decimal(str(s['price']))
+            # Вычисляем итого как часы × ставка с точностью 2 знака
+            line_total = hours * price
+            line_total = Decimal(str(round(float(line_total), 2)))
             total += line_total
             result.append({
                 'order': idx,
                 'name': s['name'],
                 'stage_type': s['type'],
                 'description': s.get('description', ''),
-                'hours': hours,
-                'unit_price': price,
+                'hours': float(hours),
+                'unit_price': float(price),
                 'total': float(line_total),
                 'required_skill_ids': [],
             })
 
+    # Округляем итоговую сумму до 2 знаков после запятой
+    total = Decimal(str(round(float(total), 2)))
     return result, float(total)
 
 
