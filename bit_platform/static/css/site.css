@@ -152,7 +152,8 @@ main {
     border: 1px solid rgba(141, 115, 255, 0.15);
     border-radius: 18px;
     box-shadow: 0 8px 22px rgba(88, 80, 146, 0.08);
-    padding: 10px 14px;
+    padding: 10px 24px;
+    margin-left: -10px;
     backdrop-filter: blur(8px);
 }
 
@@ -3462,44 +3463,34 @@ code {
     letter-spacing: -0.02em;
 }
 
-/* Слово "Цифровые" - остаётся градиентным (как было) */
+/* Слово "Цифровые" - остаётся градиентным */
 .title-gradient {
     background: linear-gradient(135deg, #8d73ff, #6b47e6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     display: block;
+    margin-bottom: 0.25rem;
 }
 
-/* Все остальные слова ("решения", "для вашего", "роста") - единый стиль */
-.title-bold,
-.title-light,
-.title-accent {
+/* Вся фраза "решения для вашего роста" - единый стиль */
+.title-phrase {
+    display: block;
     color: #475569;
     -webkit-text-fill-color: #475569;
     background: none;
     font-weight: 600;
     font-size: inherit;
+    line-height: 1.3;
 }
 
-/* Отдельные строки */
-.title-bold {
-    display: block;
-}
-
-.title-light {
-    display: block;
-    font-weight: 500;
-}
-
-.title-accent {
-    display: inline-block;
+/* Акцентное подчёркивание только для слова "роста" внутри фразы */
+.underline-word {
     position: relative;
-    font-weight: 700;
+    display: inline-block;
 }
 
-/* Подчёркивание только для слова "роста" */
-.title-accent::after {
+.underline-word::after {
     content: '';
     position: absolute;
     bottom: 6px;
@@ -3591,8 +3582,9 @@ code {
         padding: 4px 12px;
     }
     
-    .title-accent::after {
+    .underline-word::after {
         bottom: 4px;
         height: 4px;
     }
 }
+
