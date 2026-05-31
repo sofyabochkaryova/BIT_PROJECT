@@ -3588,3 +3588,15 @@ code {
     }
 }
 
+/* Принудительный перенос каждой фразы на новую строку */
+.hero-title-new .title-gradient,
+.hero-title-new .title-bold {
+    display: block;
+    line-height: 1.2;
+    margin-bottom: 0.1rem;
+}
+
+/* Немного уменьшаем отступ между строками для компактности */
+.hero-title-new .title-gradient {
+    margin-bottom: 0.25rem;
+}
