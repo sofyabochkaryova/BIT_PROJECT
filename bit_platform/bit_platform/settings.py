@@ -92,18 +92,10 @@ WSGI_APPLICATION = 'bit_platform.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "db_bit",
-        "USER": "postgres",
-        "PASSWORD": "Test1234",
-        "HOST": "localhost",
-        "PORT": "5432",
-        "OPTIONS": {
-            "client_encoding": "UTF8",
-        },
-    }
+    'default': dj_database_url.config()
 }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
