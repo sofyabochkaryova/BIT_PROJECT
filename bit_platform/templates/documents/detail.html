@@ -72,7 +72,7 @@
         <div class="card glass-card mt-4 animate__animated animate__fadeInUp" style="animation-delay:.1s">
             <div class="card-header"><h5 class="mb-0"><i class="fas fa-download me-2"></i>Скачать документ</h5></div>
             <div class="card-body">
-                <p class="text-muted mb-3">Документ будет сгенерирован с актуальными данными по заявке, договору и позициям.</p>
+                
                 <div class="d-flex gap-3 flex-wrap">
                     <a href="{% url 'documents:download' document.pk %}" class="btn btn-primary btn-lg">
                         <i class="fas fa-file-word me-2"></i>Скачать Word (.docx)
@@ -85,12 +85,12 @@
         {% if pending_signature %}
         <div class="card glass-card mt-4 border-warning animate__animated animate__fadeInUp" style="animation-delay:.2s">
             <div class="card-header bg-warning bg-opacity-10">
-                <h5 class="mb-0"><i class="fas fa-signature me-2 text-warning"></i>Подписание документа</h5>
+                <h5 class="mb-0"><i class="fas fa-{% if document.doc_type == 'contract' %}signature{% else %}check-circle{% endif %} me-2 text-warning"></i>{{ action_title }}</h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-info mb-3">
                     <i class="fas fa-info-circle me-2"></i>
-                    Пожалуйста, ознакомьтесь с документом (скачайте его выше) и подтвердите подписание или отклоните.
+                    Пожалуйста, ознакомьтесь с документом (скачайте его выше) и подтвердите или отклоните.
                 </div>
                 <form method="post" action="{% url 'documents:sign' document.pk %}">
                     {% csrf_token %}
@@ -100,8 +100,8 @@
                     </div>
                     <div class="d-flex gap-3">
                         <button type="submit" name="sign_action" value="sign" class="btn btn-success btn-lg"
-                                onclick="return confirm('Вы подтверждаете электронное подписание документа {{ document.number }}?')">
-                            <i class="fas fa-check-circle me-2"></i>Подписать документ
+                                onclick="return confirm('Вы подтверждаете {{ action_label|lower }} {{ document.number }}?')">
+                            <i class="fas fa-check-circle me-2"></i>{{ action_label }}
                         </button>
                         <button type="submit" name="sign_action" value="reject" class="btn btn-outline-danger"
                                 onclick="return confirm('Отклонить документ {{ document.number }}?')">
@@ -116,12 +116,12 @@
         {# ── История подписей ── #}
         {% if signatures %}
         <div class="card glass-card mt-4 animate__animated animate__fadeInUp" style="animation-delay:.3s">
-            <div class="card-header"><h5 class="mb-0"><i class="fas fa-history me-2"></i>Подписи</h5></div>
+            <div class="card-header"><h5 class="mb-0"><i class="fas fa-history me-2"></i>{{ signature_section_title }}</h5></div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0 align-middle">
                         <thead class="table-light">
-                            <tr><th>Подписант</th><th>Статус</th><th>Дата</th><th>IP</th><th>Комментарий</th></tr>
+                            <tr><th>{{ signature_signer_label }}</th><th>Статус</th><th>Дата</th><th>IP</th><th>Комментарий</th></tr>
                         </thead>
                         <tbody>
                         {% for sig in signatures %}
@@ -129,9 +129,9 @@
                                 <td><i class="fas fa-user me-1"></i>{{ sig.signer.get_full_name|default:sig.signer.username }}</td>
                                 <td>
                                     <span class="badge bg-{% if sig.status == 'signed' %}success{% elif sig.status == 'rejected' %}danger{% else %}warning{% endif %}">
-                                        {% if sig.status == 'signed' %}<i class="fas fa-check me-1"></i>Подписан
+                                        {% if sig.status == 'signed' %}<i class="fas fa-check me-1"></i>{{ signature_status_signed }}
                                         {% elif sig.status == 'rejected' %}<i class="fas fa-times me-1"></i>Отклонён
-                                        {% else %}<i class="fas fa-clock me-1"></i>Ожидание{% endif %}
+                                        {% else %}<i class="fas fa-clock me-1"></i>{{ signature_status_pending }}{% endif %}
                                     </span>
                                 </td>
                                 <td>{{ sig.signed_at|date:"d.m.Y H:i"|default:"—" }}</td>

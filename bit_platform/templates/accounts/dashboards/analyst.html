@@ -107,9 +107,9 @@
                                 <br>
                                 <small class="text-muted">{{ req.get_service_type_display }} · {{ req.created_at|date:"d.m.Y H:i" }}</small>
                             </div>
-                            <a href="{% url 'requests_app:request_detail' req.pk %}" class="btn btn-sm btn-primary">
-                                Взять
-                            </a>
+                            <a href="{% url 'requests_app:request_detail' req.pk %}" class="btn btn-sm btn-outline-secondary" title="Просмотреть">
+    <i class="fas fa-eye"></i>
+</a>
                         </li>
                         {% endfor %}
                     </ul>

@@ -152,8 +152,8 @@ main {
     border: 1px solid rgba(141, 115, 255, 0.15);
     border-radius: 18px;
     box-shadow: 0 8px 22px rgba(88, 80, 146, 0.08);
-    padding: 10px 24px;
-    margin-left: -10px;
+    padding: 10px 10px;
+    margin-left: -5px;
     backdrop-filter: blur(8px);
 }
 

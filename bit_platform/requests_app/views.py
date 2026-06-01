@@ -218,6 +218,16 @@ def request_detail(request, pk):
     """Детальная страница заявки"""
     service_request = get_object_or_404(ServiceRequest, pk=pk)
     
+    # ── Синхронизация статуса договора ──
+    # Если договор подписан, но статус заявки ещё 'CONTRACT_SENT', обновляем
+    from contracts.models import Contract
+    signed_contract = Contract.objects.filter(request=service_request, status='signed').first()
+    if signed_contract and service_request.status == 'CONTRACT_SENT':
+        try:
+            service_request.change_status('CONTRACT_SIGNED', request.user, f'Синхронизация: Договор {signed_contract.number} подписан', force=True)
+        except Exception:
+            pass
+    
     # Проверка доступа
     user = request.user
     profile = getattr(user, 'profile', None)

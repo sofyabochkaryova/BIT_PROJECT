@@ -74,31 +74,31 @@
             </div>
             <div class="stat-card-content">
                 <div class="stat-card-value">{{ pending_signatures|length }}</div>
-                <div class="stat-card-label">На подпись</div>
+                <div class="stat-card-label">Требуют внимания</div>
             </div>
         </div>
     </div>
 </div>
 
-{# ── Документы, ожидающие подписания ── #}
-{% if pending_signatures %}
+{# ── Документы, ожидающие подписания/принятия ── #}
+{% if pending_with_types %}
 <div class="card glass-card mb-4 border-info">
     <div class="card-header bg-info bg-opacity-10">
-        <h5 class="mb-0"><i class="fas fa-file-signature me-2 text-info"></i>Требуют подписания</h5>
+        <h5 class="mb-0"><i class="fas fa-file-signature me-2 text-info"></i>Требуют внимания</h5>
     </div>
     <div class="card-body p-0">
-        {% for doc in pending_signatures %}
+        {% for item in pending_with_types %}
         <div class="d-flex justify-content-between align-items-center px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}">
             <div>
-                <span class="fw-medium">{{ doc.get_doc_type_display }}</span> — {{ doc.number }}
-                <br><small class="text-muted">Заявка: {{ doc.request.number }}</small>
+                <span class="fw-medium">{{ item.doc.get_doc_type_display }}</span> — {{ item.doc.number }}
+                <br><small class="text-muted">Заявка: {{ item.doc.request.number }}</small>
             </div>
             <div class="d-flex gap-2">
-                <a href="{% url 'documents:download' doc.pk %}" class="btn btn-sm btn-outline-primary">
+                <a href="{% url 'documents:download' item.doc.pk %}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-file-word me-1"></i>Word
                 </a>
-                <a href="{% url 'documents:detail' doc.pk %}" class="btn btn-sm btn-success">
-                    <i class="fas fa-signature me-1"></i>Подписать
+                <a href="{% url 'documents:detail' item.doc.pk %}" class="btn btn-sm btn-success">
+                    <i class="fas fa-{% if item.doc.doc_type == 'contract' %}signature{% else %}check-circle{% endif %} me-1"></i>{{ item.action }}
                 </a>
             </div>
         </div>

@@ -82,12 +82,34 @@ def document_detail(request, pk):
 	if request.user == document.request.client:
 		pending_signature = document.signatures.filter(signer=request.user, status='pending').first()
 
+	# Определяем действие в зависимости от типа документа
+	action_label = 'Подписать документ'
+	action_title = 'Подписание документа'
+	signature_section_title = 'Подписи'
+	signature_signer_label = 'Подписант'
+	signature_status_signed = 'Подписан'
+	signature_status_pending = 'Ожидание'
+	
+	if document.doc_type in ['invoice', 'act']:
+		action_label = 'Принять документ'
+		action_title = f"Принятие {'счёта' if document.doc_type == 'invoice' else 'акта'}"
+		signature_section_title = f"История принятия {'счёта' if document.doc_type == 'invoice' else 'акта'}"
+		signature_signer_label = 'Принимающий'
+		signature_status_signed = 'Принят'
+		signature_status_pending = 'Ожидание'
+
 	return render(request, 'documents/detail.html', {
 		'document': document,
 		'can_manage': can_manage,
 		'allowed_transitions': [(s, status_labels.get(s, s)) for s in allowed_transitions],
 		'signatures': signatures,
 		'pending_signature': pending_signature,
+		'action_label': action_label,
+		'action_title': action_title,
+		'signature_section_title': signature_section_title,
+		'signature_signer_label': signature_signer_label,
+		'signature_status_signed': signature_status_signed,
+		'signature_status_pending': signature_status_pending,
 	})
 
 
@@ -160,7 +182,7 @@ def generate_bundle(request, request_id):
 	create_notification(
 		recipient=service_request.client,
 		title='Документы на подписание',
-		message=f'По заявке {service_request.number} сформированы акт и счёт. Подпишите документы в личном кабинете.',
+		message=f'По заявке {service_request.number} сформированы акт и счёт. Примите документы в личном кабинете.',
 		notification_type='request',
 		sender=request.user,
 		link=f'/documents/{act.pk}/',
@@ -243,17 +265,22 @@ def send_for_signing(request, pk):
 		document.issue_date = timezone.now().date()
 		document.save(update_fields=['status', 'issue_date', 'updated_at'])
 
+	# Определяем текст действия в зависимости от типа документа
+	is_contract = document.doc_type == 'contract'
+	action_text = 'подписи' if is_contract else 'принятия'
+	action_verb = 'подписать' if is_contract else 'принять'
+
 	# Уведомляем клиента
 	create_notification(
 		recipient=client,
-		title='Документ на подписание',
-		message=f'{document.get_doc_type_display()} {document.number} ожидает вашей подписи',
+		title=f'Документ ждёт {action_text}',
+		message=f'{document.get_doc_type_display()} {document.number} ожидает вашего {action_verb}',
 		notification_type='request',
 		sender=request.user,
 		link=f'/documents/{document.pk}/',
 	)
 
-	messages.success(request, f'Документ {document.number} отправлен на подписание клиенту {client.get_full_name() or client.username}')
+	messages.success(request, f'Документ {document.number} отправлен клиенту {client.get_full_name() or client.username}')
 	return redirect('documents:detail', pk=pk)
 
 
@@ -263,7 +290,7 @@ def send_for_signing(request, pk):
 
 @login_required
 def sign_document(request, pk):
-	"""Клиент подписывает документ."""
+	"""Клиент подписывает/принимает документ."""
 	document = get_object_or_404(BusinessDocument.objects.select_related('request'), pk=pk)
 
 	sig = document.signatures.filter(signer=request.user, status='pending').first()
@@ -276,6 +303,10 @@ def sign_document(request, pk):
 
 	action = request.POST.get('sign_action', 'sign')
 	comment = request.POST.get('sign_comment', '')
+
+	# Определяем текст действия в зависимости от типа документа
+	action_text = 'подписан' if document.doc_type == 'contract' else 'принят'
+	action_title = 'Документ подписан' if document.doc_type == 'contract' else f"{'Счёт' if document.doc_type == 'invoice' else 'Акт'} принят"
 
 	if action == 'reject':
 		sig.status = 'rejected'
@@ -298,7 +329,7 @@ def sign_document(request, pk):
 		messages.info(request, 'Документ отклонён')
 		return redirect('documents:detail', pk=pk)
 
-	# Подписание
+	# Подписание/Принятие
 	sig.status = 'signed'
 	sig.comment = comment
 	sig.signed_at = timezone.now()
@@ -326,14 +357,14 @@ def sign_document(request, pk):
 	if document.created_by:
 		create_notification(
 			recipient=document.created_by,
-			title='Документ подписан!',
-			message=f'{document.number} подписан клиентом',
+			title=action_title + '!',
+			message=f'{document.number} {action_text} клиентом',
 			notification_type='request',
 			sender=request.user,
 			link=f'/documents/{document.pk}/',
 		)
 
-	messages.success(request, f'Документ {document.number} успешно подписан')
+	messages.success(request, f'Документ {document.number} успешно {action_text}')
 	return redirect('documents:detail', pk=pk)
 
 

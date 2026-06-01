@@ -256,6 +256,11 @@ def contract_detail(request, pk):
 
 			# При подписании договора — авто-создание проекта и задач
 			if new_status == 'signed':
+				# Синхронизируем статус заявки
+				try:
+					sr.change_status('CONTRACT_SIGNED', request.user, f'Договор {contract.number} подписан', force=True)
+				except (ValueError, Exception):
+					pass
 				auto_create_project(contract, request.user)
 
 			# При активации — уведомляем клиента

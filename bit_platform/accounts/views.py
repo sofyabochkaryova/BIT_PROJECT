@@ -98,6 +98,15 @@ def client_dashboard(request):
         signatures__signer=request.user,
         signatures__status='pending',
     ).distinct().select_related('request').order_by('-created_at')
+    
+    # Подготавливаем данные о типах документов для шаблона
+    pending_with_types = []
+    for doc in pending_signatures:
+        doc_action = 'Подписать' if doc.doc_type == 'contract' else 'Принять'
+        pending_with_types.append({
+            'doc': doc,
+            'action': doc_action,
+        })
 
     context = {
         'requests': requests[:5],
@@ -106,6 +115,7 @@ def client_dashboard(request):
         'completed_requests': requests.filter(status='COMPLETED').count(),
         'client_documents': client_documents,
         'pending_signatures': pending_signatures,
+        'pending_with_types': pending_with_types,
     }
     return render(request, 'accounts/dashboards/client.html', context)
 

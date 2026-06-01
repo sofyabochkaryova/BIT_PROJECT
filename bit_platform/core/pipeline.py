@@ -90,7 +90,7 @@ def _default_stages(service_type):
              'description': 'Аудит текущей ИТ-инфраструктуры, сбор требований, выявление узких мест'},
             {'name': 'Настройка и подключение', 'type': 'deploy', 'hours': 24, 'price': 2000,
              'description': 'Настройка серверов, сетевого оборудования, развёртывание систем мониторинга'},
-            {'name': 'Мониторинг и поддержка', 'type': 'support', 'hours': 40, 'price': 1500,
+            {'name': 'Мониторинг и поддержка', 'type': 'support', 'hours': 10, 'price': 1500,
              'description': 'Круглосуточный мониторинг, техподдержка, реагирование на инциденты'},
         ],
         'implementation': [
@@ -228,74 +228,10 @@ def estimate_stages(service_request):
 
 def adapt_to_budget(stages, total, budget_from=None, budget_to=None):
     """
-    Подстраивает оценку под бюджет клиента.
-    Если бюджет задан и итого превышает — пропорционально снижает часы/ставки.
-    Возвращает (adjusted_stages, adjusted_total, savings_pct).
+    Возвращает оригинальные данные без адаптации к бюджету.
+    (Адаптация отключена)
     """
-    if not budget_to or total <= float(budget_to):
-        # Итоговая сумма не превышает бюджет — ничего не меняем
-        return stages, total, 0
-
-    budget_limit = Decimal(str(budget_to))
-    total_decimal = Decimal(str(total))
-    
-    # Сначала уменьшаем только часы (до 60% от исходных)
-    min_hours_ratio = Decimal('0.6')
-    hours_ratio = budget_limit / total_decimal if total_decimal > 0 else Decimal('1')
-    hours_ratio = max(hours_ratio, min_hours_ratio)
-
-    adjusted = []
-    adj_total = Decimal('0')
-    
-    # 1. Уменьшаем только часы
-    for s in stages:
-        new_hours = Decimal(str(s['hours'])) * hours_ratio
-        new_price = Decimal(str(s['unit_price']))
-        # Вычисляем итого как часы × ставка
-        line = new_hours * new_price
-        # Пока не округляем, работаем с полной точностью
-        adj_total += line
-        adjusted.append({
-            **s,
-            'hours': float(new_hours),
-            'unit_price': float(new_price),
-            'total': float(line),
-        })
-
-    # 2. Если всё равно не влезли — уменьшаем ставку
-    if adj_total > budget_limit:
-        left = adj_total
-        price_ratio = budget_limit / left if left > 0 else Decimal('1')
-        price_ratio = max(price_ratio, Decimal('0.5'))  # не ниже 50% от исходной ставки
-        adj_total = Decimal('0')
-        
-        for i, s in enumerate(adjusted):
-            new_price = Decimal(str(s['unit_price'])) * price_ratio
-            new_hours = Decimal(str(s['hours']))
-            # Вычисляем итого как часы × новая ставка
-            line = new_hours * new_price
-            adj_total += line
-            adjusted[i]['unit_price'] = float(new_price)
-            adjusted[i]['total'] = float(line)
-
-    # Округляем значения для отображения
-    adj_total_rounded = Decimal('0')
-    for i, stage in enumerate(adjusted):
-        # Округляем каждое значение до 2 знаков для вывода
-        rounded_hours = float(round(Decimal(str(stage['hours'])), 1))
-        rounded_price = float(round(Decimal(str(stage['unit_price'])), 2))
-        rounded_total = rounded_hours * rounded_price
-        rounded_total = float(round(Decimal(str(rounded_total)), 2))
-        
-        adj_total_rounded += Decimal(str(rounded_total))
-        adjusted[i]['hours'] = rounded_hours
-        adjusted[i]['unit_price'] = rounded_price
-        adjusted[i]['total'] = rounded_total
-
-    adj_total_final = float(round(adj_total_rounded, 2))
-    savings_pct = round((1 - float(adj_total_final) / float(total_decimal)) * 100, 1) if total_decimal > 0 else 0
-    
-    return adjusted, adj_total_final, savings_pct
+    return stages, total, 0
 
 
 # ═══════════════════════════════════════════════════════════════════════════

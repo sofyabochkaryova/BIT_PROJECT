@@ -139,7 +139,7 @@ def _docx_add_header(doc, company):
     run3.font.size = Pt(8)
     run3.font.color.rgb = RGBColor(120, 120, 120)
 
-    doc.add_paragraph('_' * 79)
+    doc.add_paragraph('_' * 78)
 
 
 def _docx_add_client_info(doc, biz_doc):
@@ -594,7 +594,7 @@ def generate_invoice_docx(biz_doc):
 
     # Отметка об электронной подписи
     doc.add_paragraph()
-    doc.add_paragraph('Документ подписывается электронной подписью сторон в системе ЭДО.')
+    doc.add_paragraph('')
     if is_signed:
         doc.add_paragraph('Статус: подписано электронной подписью')
 

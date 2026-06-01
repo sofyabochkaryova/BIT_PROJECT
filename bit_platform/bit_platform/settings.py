@@ -92,7 +92,14 @@ WSGI_APPLICATION = 'bit_platform.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config()
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'db_bit',      # Название вашей БД
+        'USER': 'postgres',              # Ваш пользователь
+        'PASSWORD': 'Test1234',     # Ваш пароль
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
 
 
